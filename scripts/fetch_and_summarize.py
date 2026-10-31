@@ -40,7 +40,7 @@ NOISE_BLACKLIST = [
     "蔣萬安", "選戰", "選舉", "造勢", "民調", "立法院", "議員", "立委", "罷免", "八卦", "夜市拜票"
 ]
 
-# 各航司專屬搜尋設定與預設基本盤 (絕不覆蓋既有文章)
+# 各航司專屬搜尋設定與精準機隊基本盤 (含總架數、自購/租賃、機齡)
 COMPANIES_CONFIG = [
     {
         "company_id": "starlux",
@@ -76,7 +76,7 @@ COMPANIES_CONFIG = [
                 "title": "航線網絡佈局 (台灣出發)",
                 "highlight": "深耕北美西岸航網，密集串聯日本與東南亞轉機市場",
                 "details": [
-                    "北美開闢洛杉磯、舊金山、西雅圖等航點，搶攻高收益商務與轉機客群。",
+                    "北美開闢洛杉磯、舊金山、西雅圖、安大略等航點，搶攻高收益商務與轉機客群。",
                     "積極佈局日本一二線城市與台中出發航線，擴大區域市場覆蓋率。"
                 ]
             },
@@ -223,10 +223,10 @@ def ensure_company_structure(company_obj: dict, cfg: dict):
     company_obj["company_id"] = cfg["company_id"]
     company_obj["company_name"] = cfg["company_name"]
 
-    # 補齊基本盤 (若原本沒有才補預設值，不覆蓋已有的 timeline_logs)
+    # 直接同步最新機隊與基本盤定義 (保留已有的 timeline_logs)
     profile = company_obj.setdefault("company_profile", {})
     for k, v in cfg["default_profile"].items():
-    profile[k] = v
+        profile[k] = v
     profile.setdefault("timeline_logs", [])
     company_obj.setdefault("finance_overview", {}).setdefault("history_logs", [])
 
@@ -320,7 +320,7 @@ def build_rss_urls(cfg: dict, after_date: str = None, before_date: str = None) -
         # 3. 一般台灣航空新聞稿
         {"hint": "cat4", "hl": "zh-TW", "gl": "TW", "ceid": "TW:zh-Hant",
          "q": f'"{c_name}" -政論 -名嘴 -選舉 -味全龍 -職棒{time_filter}'},
-        # 4. 國際英文外電 (完整保留！)
+        # 4. 國際英文外電
         {"hint": "cat4", "hl": "en-US", "gl": "US", "ceid": "US:en",
          "q": f'"{en_name}"{time_filter}'}
     ]
@@ -413,7 +413,6 @@ def parse_all_manual_ig_inbox() -> dict:
         if not block:
             continue
 
-        # 判斷歸屬航司 (預設星宇，若提到華航/中華航空/cal 則歸入華航)
         target_id = "starlux"
         lower_b = block.lower()
         if any(k in lower_b for k in ["中華航空", "華航", "[cal]", "china airlines"]):
@@ -525,10 +524,10 @@ def monthly_grounding_audit(client: genai.Client, company_obj: dict):
     print(f"🔍 [每月 1 號定期對帳] 啟動 Google Search Grounding 核對 {c_name} 最新基本盤...")
     try:
         audit_prompt = f"""
-請透過 Google Search 搜尋「{c_name}」最新公開資訊，整理以下四個區塊（每個區塊包含 highlight 短標題與 details 兩點說明陣列），直接輸出純 JSON：
+請透過 Google Search 搜尋「{c_name}」最新公開資訊，整理以下四個區塊（每個區塊包含 highlight 短標題與 details 三點說明陣列，其中 fleet 必須清楚列出總架數、各機型架數、自購與租賃架數比例及平均機齡），直接輸出純 JSON：
 {{
   "philosophy": {{"title": "核心理念與企業文化", "highlight": "...", "details": ["...", "..."]}},
-  "fleet": {{"title": "機隊規模與自有/租賃結構", "highlight": "...", "details": ["...", "..."]}},
+  "fleet": {{"title": "機隊規模、機齡與自有/租賃結構", "highlight": "...", "details": ["...", "...", "..."]}},
   "routes": {{"title": "航線網絡佈局 (台灣出發)", "highlight": "...", "details": ["...", "..."]}},
   "partners": {{"title": "國際合作夥伴與聯盟策略", "highlight": "...", "details": ["...", "..."]}}
 }}
