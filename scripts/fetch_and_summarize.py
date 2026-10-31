@@ -47,7 +47,7 @@ COMPANIES_CONFIG = [
         "company_name": "星宇航空",
         "stock_code": "2646",
         "en_name": "STARLUX Airlines",
-        "ceo_kw": "張國煒",
+        "ceo_kw": '"張國煒"',
         "cat_summaries": {
             "cat1": "聚焦星宇航空「Safety is our attitude」飛安文化、張國煒董事長經營哲學、全空巴機隊擴張、北美與亞洲航網佈局及國際策略合作。",
             "cat2": "彙整 Dcard、PTT Aviation 版、官方 IG/Threads 話題與航空社群針對星宇培訓機師面試、航線體驗與職場文化之實質討論。",
@@ -95,7 +95,7 @@ COMPANIES_CONFIG = [
         "company_name": "中華航空",
         "stock_code": "2610",
         "en_name": "China Airlines",
-        "ceo_kw": "高星潢 OR 陳漢銘",
+        "ceo_kw": '"高星潢" OR "陳漢銘"',
         "cat_summaries": {
             "cat1": "聚焦中華航空「飛安第一、以客為尊」企業文化、高層經營策略、波音與空巴雙主流機隊汰舊換新、全球航網與 ESG 永續飛航領先指標。",
             "cat2": "彙整 Dcard、PTT Aviation 版、官方 IG/Threads 話題與航空社群針對華航培訓機師考情、航線服務與職場文化之實質討論。",
@@ -173,7 +173,7 @@ class TimelineLogItem(BaseModel):
 
 class FinanceLogItem(BaseModel):
     period: str = Field(description="財務期間或日期，例如：2026-09 或 2026 Q3")
-    event_type: str = Field(description="月營收 / 季財報 / 重大財務操作")
+    event_type: str = Field(description="請務必從以下三類擇一填寫：'月營收'、'季財報'、'重大財務操作'")
     headline: str = Field(description="核心數據標題")
     metrics: str = Field(description="關鍵財務數據摘要（如 YoY、MoM、EPS 或租機購機金額）")
     bull_view: str = Field(description="🟢正方公司派觀點")
@@ -189,8 +189,10 @@ class BatchAIResponse(BaseModel):
 # ==========================================
 # 2. 輔助函式與雜訊檢驗邏輯
 # ==========================================
-def make_short_id(text: str) -> str:
-    return hashlib.md5(text.encode("utf-8")).hexdigest()[:10]
+def make_short_id(text: str, prefix: str = "") -> str:
+    raw = f"{prefix}::{text}" if prefix else text
+    h = hashlib.md5(raw.encode("utf-8")).hexdigest()[:10]
+    return f"{prefix}_{h}" if prefix else h
 
 def load_json(filepath: str, default_data: dict) -> dict:
     if os.path.exists(filepath):
@@ -261,6 +263,7 @@ def sanitize_existing_data(company_obj: dict, cfg: dict):
     """清除殘留的非航空政論/職棒雜訊，但完整保留所有正常航空新聞與手動 IG 貼文"""
     ensure_company_structure(company_obj, cfg)
     total_removed = 0
+    cid = cfg["company_id"]
 
     for cat_obj in company_obj.get("categories", []):
         cleaned_articles = []
@@ -288,7 +291,7 @@ def sanitize_existing_data(company_obj: dict, cfg: dict):
             art["link"] = link_url
             art["url"] = link_url
             if not art.get("id"):
-                art["id"] = make_short_id(title)
+                art["id"] = make_short_id(title, prefix=cid)
             cleaned_articles.append(art)
 
         cleaned_articles.sort(key=lambda x: x.get("published_at", ""), reverse=True)
@@ -297,33 +300,47 @@ def sanitize_existing_data(company_obj: dict, cfg: dict):
     print(f"🧹 [{cfg['company_name']}] 巡檢完成：已剔除 {total_removed} 則非航空雜訊，保留所有有效航空情報！")
 
 # ==========================================
-# 3. RSS 抓取 (含英文外電) 與手動 IG 投遞箱讀取
+# 3. RSS 抓取 (修復語法 + 雙航司獨立防重) 與手動 IG 投遞箱讀取
 # ==========================================
 def build_rss_urls(cfg: dict, after_date: str = None, before_date: str = None) -> List[dict]:
-    time_filter = ""
-    if after_date and before_date:
-        time_filter = f" after:{after_date} before:{before_date}"
-
-    c_name = cfg["company_name"]
-    s_code = cfg["stock_code"]
+    """
+    修復原因 A：採用最穩定、必出結果的 Google News RSS 關鍵字組合。
+    避免無引號人名或複雜 AND/OR 巢狀語法導致 Google News 回傳 0 筆。
+    """
+    time_filter = f" after:{after_date} before:{before_date}" if (after_date and before_date) else ""
+    cid = cfg["company_id"]
     en_name = cfg["en_name"]
-    ceo_kw = cfg["ceo_kw"]
-    alias_q = f'"{c_name}" OR "華航"' if cfg["company_id"] == "cal" else f'"{c_name}"'
 
-    queries = [
-        # 1. 經營、財報、月營收、重訊
-        {"hint": "cat3", "hl": "zh-TW", "gl": "TW", "ceid": "TW:zh-Hant",
-         "q": f'({alias_q} OR "{s_code}") AND ("營收" OR "財報" OR "法說會" OR "增資" OR "售後租回" OR "交機" OR {ceo_kw}){time_filter}'},
-        # 2. 社群話題、培訓機師、IG/Threads 轉載
-        {"hint": "cat2", "hl": "zh-TW", "gl": "TW", "ceid": "TW:zh-Hant",
-         "q": f'({alias_q}) AND (site:dcard.tw OR site:ptt.cc OR "培訓機師" OR "面試" OR "飛行員" OR "IG" OR "Threads" OR "開航") -政論 -選舉 -味全龍 -職棒{time_filter}'},
-        # 3. 一般台灣航空新聞稿
-        {"hint": "cat4", "hl": "zh-TW", "gl": "TW", "ceid": "TW:zh-Hant",
-         "q": f'"{c_name}" -政論 -名嘴 -選舉 -味全龍 -職棒{time_filter}'},
-        # 4. 國際英文外電
-        {"hint": "cat4", "hl": "en-US", "gl": "US", "ceid": "US:en",
-         "q": f'"{en_name}"{time_filter}'}
-    ]
+    if cid == "starlux":
+        queries = [
+            # 1. 經營、財報、月營收、重訊
+            {"hint": "cat3", "hl": "zh-TW", "gl": "TW", "ceid": "TW:zh-Hant",
+             "q": f'"星宇航空" ("營收" OR "財報" OR "法說會" OR "增資" OR "售後租回" OR "交機" OR "張國煒"){time_filter}'},
+            # 2. 社群話題、培訓機師、航點與新機
+            {"hint": "cat2", "hl": "zh-TW", "gl": "TW", "ceid": "TW:zh-Hant",
+             "q": f'"星宇航空" ("培訓機師" OR "機師" OR "開航" OR "A350" OR "A330" OR "Dcard" OR "PTT"){time_filter}'},
+            # 3. 一般台灣航空新聞稿 (最廣域保底必出結果)
+            {"hint": "cat4", "hl": "zh-TW", "gl": "TW", "ceid": "TW:zh-Hant",
+             "q": f'"星宇航空" -職棒 -味全龍 -選舉{time_filter}'},
+            # 4. 國際英文外電
+            {"hint": "cat4", "hl": "en-US", "gl": "US", "ceid": "US:en",
+             "q": f'"{en_name}"{time_filter}'}
+        ]
+    else:  # cal (中華航空)
+        queries = [
+            # 1. 經營、財報、月營收、重訊、高層談話 (加上完整雙引號)
+            {"hint": "cat3", "hl": "zh-TW", "gl": "TW", "ceid": "TW:zh-Hant",
+             "q": f'("中華航空" OR "華航") ("營收" OR "財報" OR "獲利" OR "法說會" OR "高星潢" OR "陳漢銘" OR "股利"){time_filter}'},
+            # 2. 機隊、航點、培訓機師、社群話題
+            {"hint": "cat2", "hl": "zh-TW", "gl": "TW", "ceid": "TW:zh-Hant",
+             "q": f'("中華航空" OR "華航") ("培訓機師" OR "機師" OR "787" OR "A350" OR "777F" OR "開航" OR "天合聯盟"){time_filter}'},
+            # 3. 一般台灣航空新聞稿 (最廣域保底必出結果)
+            {"hint": "cat4", "hl": "zh-TW", "gl": "TW", "ceid": "TW:zh-Hant",
+             "q": f'("中華航空" OR "華航") -職棒 -味全龍 -選舉{time_filter}'},
+            # 4. 國際英文外電
+            {"hint": "cat4", "hl": "en-US", "gl": "US", "ceid": "US:en",
+             "q": f'"{en_name}"{time_filter}'}
+        ]
 
     rss_list = []
     for item in queries:
@@ -332,15 +349,20 @@ def build_rss_urls(cfg: dict, after_date: str = None, before_date: str = None) -
         rss_list.append({"url": url, "hint": item["hint"]})
     return rss_list
 
-def fetch_raw_candidates(rss_configs: List[dict], history_data: dict, max_items: int = 15) -> List[dict]:
+def fetch_raw_candidates(company_id: str, rss_configs: List[dict], history_data: dict, max_items: int = 15) -> List[dict]:
+    """
+    修復原因 B-2：使用 company_id 作為 seen_ids 前綴，並將 seen_titles 按航司分開儲存，
+    確保星宇 (starlux) 與華航 (cal) 絕對不會互相誤擋新聞！
+    """
     seen_ids = set(history_data.get("seen_ids", []))
-    seen_titles = history_data.get("seen_titles", [])
+    titles_by_comp = history_data.setdefault("seen_titles_by_company", {})
+    seen_titles = titles_by_comp.setdefault(company_id, [])
     candidates = []
 
     for cfg in rss_configs:
         try:
             feed = feedparser.parse(cfg["url"])
-            for entry in feed.entries[:10]:
+            for entry in feed.entries[:12]:
                 raw_title = entry.get("title", "").strip()
                 link = entry.get("link", "").strip()
                 if not raw_title or not link:
@@ -356,13 +378,14 @@ def fetch_raw_candidates(rss_configs: List[dict], history_data: dict, max_items:
                 if hasattr(entry, "published_parsed") and entry.published_parsed:
                     pub_date = time.strftime("%Y-%m-%d", entry.published_parsed)
 
-                item_id = make_short_id(clean_title)
+                # 冠上 company_id 專屬前綴 (例如 cal_a1b2c3d4ff)
+                item_id = make_short_id(clean_title, prefix=company_id)
                 if item_id in seen_ids:
                     continue
 
                 is_dup = False
                 for old_title in seen_titles[-300:]:
-                    if fuzz.token_set_ratio(clean_title, old_title) >= 80:
+                    if fuzz.token_set_ratio(clean_title, old_title) >= 82:
                         is_dup = True
                         break
                 if is_dup:
@@ -387,8 +410,8 @@ def fetch_raw_candidates(rss_configs: List[dict], history_data: dict, max_items:
         if len(candidates) >= max_items:
             break
 
-    history_data["seen_ids"] = list(seen_ids)[-1500:]
-    history_data["seen_titles"] = seen_titles[-1500:]
+    history_data["seen_ids"] = list(seen_ids)[-2000:]
+    titles_by_comp[company_id] = seen_titles[-800:]
     return candidates
 
 def parse_all_manual_ig_inbox() -> dict:
@@ -438,7 +461,7 @@ def parse_all_manual_ig_inbox() -> dict:
         full_text = "\n".join(body_lines).strip()
         if len(full_text) >= 5:
             result[target_id].append({
-                "id": make_short_id(full_text),
+                "id": make_short_id(full_text, prefix=target_id),
                 "title": f"[📸 官方IG精選] {full_text[:120]}",
                 "raw_post_text": full_text,
                 "source": "官方 Instagram / Threads",
@@ -460,7 +483,7 @@ def reset_manual_ig_inbox():
         print(f"⚠️ 重置投遞箱失敗: {e}")
 
 # ==========================================
-# 4. Gemini AI 批次分析
+# 4. Gemini AI 批次分析 (API 間隔調為 12 秒)
 # ==========================================
 def analyze_with_gemini(client: genai.Client, company_name: str, candidates: List[dict]) -> Optional[BatchAIResponse]:
     if not candidates:
@@ -485,7 +508,7 @@ def analyze_with_gemini(client: genai.Client, company_name: str, candidates: Lis
    - 針對 `cat3`、重大機隊航網決策或手動 IG 貼文，請提供 `bull_view`（🟢正方觀點）、`bear_view`（🔴反方隱憂）與 `pilot_view`（✈️培訓機師面試官視角）。
 5. **自動擷取基本盤與財務時間軸異動 (`new_timeline_logs` & `new_finance_logs`)**：
    - 若包含具體的「新機交付、售後租回、新航線開航/增班、重要結盟、資本增資」，請提煉至 `new_timeline_logs`（務必帶入 `url` 與 `source`）。
-   - 若包含具體的「某月營收數據、某季財報數據、重大財務購租機」，請提煉至 `new_finance_logs`（務必帶入 `url`）。
+   - 若包含具體的「某月營收數據、某季財報數據、重大財務購租機」，請提煉至 `new_finance_logs`（`event_type` 請務必歸類為 `月營收`、`季財報` 或 `重大財務操作`，並務必帶入 `url`）。
 
 原始候選清單 JSON 如下：
 {json.dumps(candidates, ensure_ascii=False, indent=2)}
@@ -493,7 +516,7 @@ def analyze_with_gemini(client: genai.Client, company_name: str, candidates: Lis
 
     for model_name in [PRIMARY_MODEL, "gemini-2.0-flash"]:
         try:
-            print(f"🤖 呼叫 Gemini 模型 ({model_name}) 進行 [{company_name}] 批次語意分析...")
+            print(f"🤖 呼叫 Gemini 模型 ({model_name}) 進行 [{company_name}] 批次語意分析 (共 {len(candidates)} 筆候選)...")
             response = client.models.generate_content(
                 model=model_name,
                 contents=prompt,
@@ -503,11 +526,17 @@ def analyze_with_gemini(client: genai.Client, company_name: str, candidates: Lis
                     temperature=0.2,
                 ),
             )
-            time.sleep(5)
+            # 修復原因 B-1：強制等待 12 秒，避免觸發免費版 Rate Limit (429)
+            time.sleep(12)
             return BatchAIResponse.model_validate_json(response.text)
         except Exception as e:
-            print(f"⚠️ 模型 {model_name} 呼叫異常，嘗試備援或略過: {e}")
-            time.sleep(5)
+            err_msg = str(e)
+            print(f"⚠️ 模型 {model_name} 呼叫異常: {err_msg[:200]}")
+            if "429" in err_msg or "RESOURCE_EXHAUSTED" in err_msg:
+                print("⏳ 偵測到 API 429 限流，等待 25 秒冷卻後重試...")
+                time.sleep(25)
+            else:
+                time.sleep(12)
     return None
 
 # ==========================================
@@ -540,7 +569,7 @@ def monthly_grounding_audit(client: genai.Client, company_obj: dict):
                 temperature=0.1,
             ),
         )
-        time.sleep(5)
+        time.sleep(12)
 
         raw_text = response.text.strip()
         if "```json" in raw_text:
@@ -557,6 +586,7 @@ def monthly_grounding_audit(client: genai.Client, company_obj: dict):
         print(f"✅ [{c_name}] 每月 1 號企業基本盤更新完成！")
     except Exception as e:
         print(f"🛡️ [防呆保護啟動] {c_name} 每月對帳搜尋發生異常（已安全略過）: {e}")
+        time.sleep(12)
 
 # ==========================================
 # 6. 資料合併與結構同步
@@ -565,6 +595,7 @@ def merge_results_into_data(company_obj: dict, cfg: dict, ai_result: BatchAIResp
     if not ai_result:
         return
 
+    cid = cfg["company_id"]
     ensure_company_structure(company_obj, cfg)
     cat_dict = {c["category_id"]: c["articles"] for c in company_obj["categories"]}
 
@@ -579,7 +610,7 @@ def merge_results_into_data(company_obj: dict, cfg: dict, ai_result: BatchAIResp
         is_english = any(ord(ch) < 128 for ch in item.source) and " " in item.source and not force_manual
 
         news_dict = {
-            "id": make_short_id(item.title),
+            "id": make_short_id(item.title, prefix=cid),
             "title": item.title,
             "translated_title": item.title,
             "date": item.date,
@@ -630,7 +661,7 @@ def merge_results_into_data(company_obj: dict, cfg: dict, ai_result: BatchAIResp
     timeline_logs.sort(key=lambda x: x.get("date", ""), reverse=True)
     profile["timeline_logs"] = timeline_logs[:5]
 
-    # 更新 finance_overview
+    # 更新 finance_overview (擴充容量至 60 筆供前端月份篩選與展開歷史紀錄使用)
     fin_overview = company_obj.setdefault("finance_overview", {})
     fin_logs = fin_overview.setdefault("history_logs", [])
     existing_fin_titles = {(x.get("headline") or x.get("title")) for x in fin_logs}
@@ -653,7 +684,7 @@ def merge_results_into_data(company_obj: dict, cfg: dict, ai_result: BatchAIResp
             })
             existing_fin_titles.add(fl.headline)
     fin_logs.sort(key=lambda x: x.get("date") or x.get("period") or "", reverse=True)
-    fin_overview["history_logs"] = fin_logs[:24]
+    fin_overview["history_logs"] = fin_logs[:60]
 
     print(f"📥 [{cfg['company_name']}] 本批次成功寫入 {added_count} 則精選情報！")
 
@@ -685,7 +716,7 @@ def main():
             "cal": today_str
         },
         "seen_ids": [],
-        "seen_titles": []
+        "seen_titles_by_company": {"starlux": [], "cal": []}
     }
     history = load_json(HISTORY_FILE, default_history)
     cursors_map = history.setdefault("backfill_cursors", {
@@ -712,6 +743,14 @@ def main():
         # 階段 0：大掃除與基本盤掛載
         sanitize_existing_data(comp_obj, cfg)
 
+        # 若發現該航司目前總文章數為 0 (例如先前華航因語法問題抓到 0 篇)，自動重置該航司的回溯游標與歷史紀錄，確保立刻抓滿！
+        total_existing_articles = sum(len(cat.get("articles", [])) for cat in comp_obj.get("categories", []))
+        if total_existing_articles == 0:
+            print(f"🔄 偵測到 [{cname}] 目前文章數為 0，自動重置 {cname} 回溯游標至今日 ({today_str}) 以利完整抓取！")
+            cursors_map[cid] = today_str
+            history.setdefault("seen_titles_by_company", {})[cid] = []
+            history["seen_ids"] = [sid for sid in history.get("seen_ids", []) if not sid.startswith(f"{cid}_")]
+
         # 階段 IG：處理手動投遞的 IG 貼文 (強制保送 cat2)
         manual_items = manual_inbox_map.get(cid, [])
         if manual_items:
@@ -722,7 +761,7 @@ def main():
         # 階段 A：抓取今日最新情報
         print(f"🚀 [階段 A] 抓取 {cname} 今日最新即時情報...")
         latest_rss = build_rss_urls(cfg)
-        latest_candidates = fetch_raw_candidates(latest_rss, history, max_items=14)
+        latest_candidates = fetch_raw_candidates(cid, latest_rss, history, max_items=15)
         if latest_candidates:
             ai_res_latest = analyze_with_gemini(client, cname, latest_candidates)
             merge_results_into_data(comp_obj, cfg, ai_res_latest)
@@ -741,7 +780,7 @@ def main():
             print(f"⏪ [階段 B：{cname} 歷史回溯] 正在回補區間：{after_str} ~ {before_str} ...")
 
             backfill_rss = build_rss_urls(cfg, after_date=after_str, before_date=before_str)
-            backfill_candidates = fetch_raw_candidates(backfill_rss, history, max_items=18)
+            backfill_candidates = fetch_raw_candidates(cid, backfill_rss, history, max_items=18)
             if backfill_candidates:
                 ai_res_backfill = analyze_with_gemini(client, cname, backfill_candidates)
                 merge_results_into_data(comp_obj, cfg, ai_res_backfill)
