@@ -47,7 +47,7 @@
           <div>
             <h1 class="text-xl font-bold tracking-wider text-white flex items-center gap-2">
               航空培訓機師情報中心
-              <span class="text-xs px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 font-normal">STARLUX 專區</span>
+              <span id="header-company-badge" class="text-xs px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 font-normal">STARLUX 專區</span>
             </h1>
             <p class="text-xs text-slate-400">全自動 AI 情報摘要 · 機隊航網時間軸 · 財務正反觀點判讀系統</p>
           </div>
@@ -105,7 +105,7 @@
           </div>
           <div class="bg-slate-800/60 p-3.5 rounded-lg border border-slate-700/70">
             <div class="font-bold text-white mb-1">📊 每季結束後 45 天：完整財報 (Q1~Q4)</div>
-            <p class="text-slate-300 leading-relaxed">管道：<span class="text-amber-300">MOPS 電子書與財報新聞</span>。揭露單季盈虧、流動比率、自由現金流、燃油避險與聯貸承諾。</p>
+            <p class="text-slate-300 leading-relaxed">管道：<span class="text-amber-300">MOPS 電子書與財報新聞</span>。揭露單季盈虧、流動比率、自由現金流、燃油避險與資本支出。</p>
           </div>
           <div class="bg-slate-800/60 p-3.5 rounded-lg border border-slate-700/70">
             <div class="font-bold text-white mb-1">⚡ 不定期：重大訊息公告 (重訊)</div>
@@ -119,7 +119,7 @@
         <div class="flex items-center justify-between mb-4">
           <h3 class="text-lg font-bold text-white flex items-center gap-2">
             <span class="w-2 h-5 rounded gold-gradient inline-block"></span>
-            星宇航空 (2646) 近期關鍵財務與資本操作指標追蹤
+            <span id="finance-company-title">星宇航空 (2646) 近期關鍵財務與資本操作指標追蹤</span>
           </h3>
           <span class="text-xs text-emerald-400 font-mono">⚡ 隨財報與重訊發布自動更新</span>
         </div>
@@ -156,7 +156,8 @@
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-800">
           <div>
             <h2 class="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-              <span>✈️</span> 星宇航空 (STARLUX) 企業基本盤與機隊/航網即時動態
+              <span>✈️</span>
+              <span id="profile-company-title">星宇航空 (STARLUX) 企業基本盤與機隊/航網即時動態</span>
               <span class="text-[11px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 font-normal">面試必備小抄</span>
             </h2>
             <p class="text-xs text-slate-400 mt-0.5">採用「基準資料 + AI 增量事件偵測」架構，每日抓到交機、售後租回、開航或新合作時自動更新並記錄於下方 Time Scale</p>
@@ -247,7 +248,7 @@
   </main>
 
   <footer class="border-t border-slate-800/80 py-6 mt-12 text-center text-xs text-slate-500">
-    <p>航空培訓機師情報中心 · 資料來源：Google News RSS、公開資訊觀測站 (MOPS) & Gemini AI</p>
+    <p>航空培訓機師情報中心 · 資料來源：Google News RSS、公開資訊觀測站 (MOPS)、官方 IG & Gemini AI</p>
   </footer>
 
   <script>
@@ -261,151 +262,229 @@
     let displayLimit = 10;
     const PAGE_SIZE = 10;
 
+    // 預留擴充清單（中華航空已正式啟用，故僅保留長榮與國際航空）
     const plannedCompanies = [
-      { id: 'china-airlines', name: '中華航空 (預留擴充)' },
       { id: 'eva-air', name: '長榮航空 (預留擴充)' },
       { id: 'global-aviation', name: '國際航空動態 (預留擴充)' }
     ];
 
-    const defaultCategoryMeta = {
-      cat1: { name: "1.公司文化與高層談話", summary: "聚焦星宇航空「Safety is our attitude」飛安文化、張國煒董事長經營哲學、全空巴機隊擴張、北美與亞洲航網佈局及國際策略合作。" },
-      cat2: { name: "2.社群討論與培訓考情", summary: "彙整 Dcard、PTT Aviation 版與航空社群針對星宇培訓機師面試準備、航線搭乘體驗、機隊服務與職場文化之實質討論（已嚴格過濾非航空雜訊）。" },
-      cat3: { name: "3.公司經營與財報走向", summary: "追蹤每月營收、季度財報、法說會展望，以及新機售後租回（SLB）、現金增資、可轉債等重資產擴張期之關鍵財務操作。" },
-      cat4: { name: "4.相關新聞稿與國際外電", summary: "收錄國內外媒體新聞稿與英文航空外電（自動翻譯繁中），掌握星宇航空國際能見度、跨界行銷與全球航空產業動態。" }
+    // 依航司區分的預設分類摘要
+    const defaultCategoryMetaByCompany = {
+      starlux: {
+        cat1: { name: "1.公司文化與高層談話", summary: "聚焦星宇航空「Safety is our attitude」飛安文化、張國煒董事長經營哲學、全空巴機隊擴張、北美與亞洲航網佈局及國際策略合作。" },
+        cat2: { name: "2.社群與影音動態(Dcard/PTT/YouTube/IG話題)", summary: "彙整 Dcard、PTT Aviation 版、官方 IG/Threads 話題與航空社群針對星宇培訓機師面試準備、航線搭乘體驗與職場文化之實質討論。" },
+        cat3: { name: "3.公司經營與財報走向", summary: "追蹤每月營收、季度財報、法說會展望，以及新機售後租回（SLB）、現金增資、可轉債等重資產擴張期之關鍵財務操作。" },
+        cat4: { name: "4.相關新聞稿(中文與國際外電)", summary: "收錄國內外媒體新聞稿與英文航空外電（自動翻譯繁中），掌握星宇航空國際能見度、跨界行銷與全球航空產業動態。" }
+      },
+      cal: {
+        cat1: { name: "1.公司文化與高層談話", summary: "聚焦中華航空「飛安第一、以客為尊」企業文化、高層經營策略、波音與空巴雙主流機隊汰舊換新、全球航網與 ESG 永續飛航領先指標。" },
+        cat2: { name: "2.社群與影音動態(Dcard/PTT/YouTube/IG話題)", summary: "彙整 Dcard、PTT Aviation 版、官方 IG/Threads 話題與航空社群針對華航培訓機師考情、航線服務與職場文化之實質討論。" },
+        cat3: { name: "3.公司經營與財報走向", summary: "追蹤華航每月客貨運營收、季度財報、法說會展望，以及 787/A350 新機引進、747/777F 貨機機隊營運與財務結構表現。" },
+        cat4: { name: "4.相關新聞稿(中文與國際外電)", summary: "收錄國內外媒體新聞稿與英文航空外電（自動翻譯繁中），掌握中華航空於天合聯盟（SkyTeam）及全球航空市場之最新動態。" }
+      }
     };
 
-    const defaultCompanyProfile = {
-      philosophy: {
-        title: "核心理念與企業文化",
-        highlight: "Safety is our attitude (飛安零妥協)",
-        details: [
-          "定位「精品航空 (Luxury Boutique Airline)」，強調五感體驗與台灣溫度。",
-          "董事長張國煒具機師與機務雙背景，高度重視第一線飛安紀律、SOP 標準化與自有維修能量（桃園航空城機棚與維修基地）。"
+    // 各航司專屬預設企業基本盤 (星宇 + 華航)
+    const defaultProfilesByCompany = {
+      starlux: {
+        badgeText: "STARLUX 專區",
+        profileHeaderTitle: "星宇航空 (STARLUX) 企業基本盤與機隊/航網即時動態",
+        financeHeaderTitle: "星宇航空 (2646) 近期關鍵財務與資本操作指標追蹤",
+        philosophy: {
+          title: "核心理念與企業文化",
+          highlight: "Safety is our attitude (飛安零妥協)",
+          details: [
+            "定位「精品航空 (Luxury Boutique Airline)」，強調五感體驗與台灣溫度。",
+            "董事長張國煒具機師與機務雙背景，高度重視第一線飛安紀律、SOP 標準化與自有維修能量（桃園航空城機棚與維修基地）。"
+          ]
+        },
+        fleet: {
+          title: "機隊規模與自有/租賃結構",
+          highlight: "全空巴機隊 (A321neo / A339 / A350)",
+          details: [
+            "營運主力：A321neo (區域線主力)、A330-900neo (中長程/高運量亞洲線)、A350-900 / A350-1000 (越洋旗艦) 及 A350F 貨機訂單。",
+            "資產結構：採「自購與營業租賃雙軌並行」，透過 A330-900 售後租回活化現金流、調節自有與租賃比例。"
+          ]
+        },
+        routes: {
+          title: "航線網絡佈局 (台灣出發)",
+          highlight: "北美越洋線 + 亞洲高收益航點",
+          details: [
+            "北美長程網：洛杉磯 (LAX)、舊金山 (SFO)、西雅圖 (SEA)、安大略 (ONT)，並積極評估鳳凰城與歐洲航點。",
+            "亞洲區域網：日本全線（東京/大阪/北海道/沖繩與二線城市）、東南亞熱門航點，主打高載客率與中轉接駁。"
+          ]
+        },
+        partners: {
+          title: "國際合作夥伴與聯盟策略",
+          highlight: "靈活雙邊合作 (優先於傳統入盟)",
+          details: [
+            "阿提哈德航空 (Etihad) 與美國航空 (AA)：擴大共掛班號與雙向哩程累積/兌換，直通北美、中東與歐洲航網。",
+            "阿拉斯加航空 (Alaska Airlines)：北美內陸轉機深度合作夥伴；中長期持續爭取加入「寰宇一家 (oneworld)」。"
+          ]
+        },
+        timeline_logs: [
+          {
+            date: "2026-10-29",
+            category: "合作夥伴",
+            badge_color: "sky",
+            event: "與阿提哈德航空 (Etihad) 宣布開放雙向哩程累積與機票兌換，強化歐亞中轉網絡。",
+            source: "星宇官方 / 財經新聞",
+            url: "https://news.google.com/search?q=%E6%98%9F%E5%AE%87%E8%88%AA%E7%A9%BA+%E9%98%BF%E6%8F%90%E5%93%88%E5%BE%B7+%E5%93%A9%E7%A8%8B&hl=zh-TW&gl=TW&ceid=TW:zh-Hant"
+          },
+          {
+            date: "2026-09-23",
+            category: "資本與機隊",
+            badge_color: "amber",
+            event: "啟動現金增資 3 億股與發行無擔保轉換公司債（上限 20 億），同步推進 A330-900 售後租回計畫以充實營運資金。",
+            source: "公開資訊觀測站 / 財經新聞",
+            url: "https://news.google.com/search?q=%E6%98%9F%E5%AE%87%E8%88%AA%E7%A9%BA+%E7%8F%BE%E9%87%91%E5%A2%9E%E8%B3%87+3%E5%84%84%E8%82%A1&hl=zh-TW&gl=TW&ceid=TW:zh-Hant"
+          },
+          {
+            date: "2026-08-05",
+            category: "機隊異動 (售後租回)",
+            badge_color: "emerald",
+            event: "公告處分 1 架剛交機之 A330-900 予租賃公司並辦理售後租回，單架認列處分利益約 1.6 億元。",
+            source: "公開資訊觀測站重訊",
+            url: "https://news.google.com/search?q=%E6%98%9F%E5%AE%87%E8%88%AA%E7%A9%BA+A330-900+%E5%94%AE%E5%BE%8C%E7%A7%9F%E5%9B%9E&hl=zh-TW&gl=TW&ceid=TW:zh-Hant"
+          }
         ]
       },
-      fleet: {
-        title: "機隊規模與自有/租賃結構",
-        highlight: "全空巴機隊 (A321neo / A339 / A350)",
-        details: [
-          "營運主力：A321neo (區域線主力)、A330-900neo (中長程/高運量亞洲線)、A350-900 / A350-1000 (越洋旗艦) 及 A350F 貨機訂單。",
-          "資產結構：採「自購與營業租賃雙軌並行」，近期透過 3 架 A330-900 售後租回（總額約 108 億）活化現金流、調節自有與租賃比例。"
+      cal: {
+        badgeText: "CHINA AIRLINES 專區",
+        profileHeaderTitle: "中華航空 (China Airlines) 企業基本盤與機隊/航網即時動態",
+        financeHeaderTitle: "中華航空 (2610) 近期關鍵財務與資本操作指標追蹤",
+        philosophy: {
+          title: "核心理念與企業文化",
+          highlight: "飛安第一、以客為尊、永續領航",
+          details: [
+            "台灣最具歷史底蘊與規模之旗艦航空，具備極為成熟的飛航安全管理系統（SMS）與培訓機師養成體系。",
+            "連年入選道瓊永續指數（DJSI），領先國籍航空推動永續航空燃油（SAF）添加與淨零碳排示範航班。"
+          ]
+        },
+        fleet: {
+          title: "機隊規模與自有/租賃結構",
+          highlight: "波音與空巴雙主流 + 全球頂尖全貨機機隊",
+          details: [
+            "長程與區域客機：主力為 A350-900、777-300ER 與 A321neo，並引進 24 架波音 787（含 787-9/787-10）逐步汰換 A330-300。",
+            "全貨機王牌：擁有 747-400F 與高效率 777F 貨機機隊，並持續評估新一代廣體貨機，穩居全球空運要角。"
+          ]
+        },
+        routes: {
+          title: "航線網絡佈局 (台灣出發)",
+          highlight: "歐美直飛航點最齊全 + 亞洲黃金航網",
+          details: [
+            "歐美長程網：直飛北美（洛杉磯、安大略、舊金山、西雅圖、溫哥華、紐約）與歐洲 6 大航點（法蘭克福、阿姆斯特丹、倫敦、羅馬、維也納、布拉格）。",
+            "亞洲與大洋洲：東北亞、東南亞、兩岸及紐澳（雪梨、布里斯本、墨爾本、奧克蘭）航網綿密，商務與轉機客源穩固。"
+          ]
+        },
+        partners: {
+          title: "國際合作夥伴與聯盟策略",
+          highlight: "天合聯盟 (SkyTeam) 正式成員",
+          details: [
+            "台灣唯一加入國際三大航空聯盟之天合聯盟成員，與達美航空、法荷航集團、大韓航空等全球夥伴深度共掛班號與貴賓室互享。",
+            "結合客運聯盟優勢與強大貨運網路，具備極佳之全球中轉接駁與抗景氣循環能力。"
+          ]
+        },
+        timeline_logs: [
+          {
+            date: "2026-10",
+            category: "貨運與營收",
+            badge_color: "emerald",
+            event: "受惠 AI 伺服器、半導體設備與跨境電商空運需求強勁，777F 貨機機隊高稼動率推升單月與累計營收續創同期高峰。",
+            source: "財經新聞 / MOPS",
+            url: "https://news.google.com/search?q=%E4%B8%AD%E8%8F%AF%E8%88%AA%E7%A9%BA+%E7%87%9F%E6%94%B6+AI+%E8%B2%A8%E9%81%8B&hl=zh-TW&gl=TW&ceid=TW:zh-Hant"
+          },
+          {
+            date: "2026-09",
+            category: "機隊汰舊換新",
+            badge_color: "amber",
+            event: "持續推進 A350 客艙升級計畫與波音 787 新世代廣體客機引進準備，逐步接替 A330-300 強化中長程運能。",
+            source: "航空新聞 / 法說會動態",
+            url: "https://news.google.com/search?q=%E4%B8%AD%E8%8F%AF%E8%88%AA%E7%A9%BA+787+A350+%E6%A9%9F%E9%9A%8A&hl=zh-TW&gl=TW&ceid=TW:zh-Hant"
+          },
+          {
+            date: "2026-07",
+            category: "航網開拓",
+            badge_color: "purple",
+            event: "復飛並加密西雅圖等北美航線，串聯天合聯盟夥伴擴大跨太平洋轉機市場占有率。",
+            source: "華航新聞稿",
+            url: "https://news.google.com/search?q=%E4%B8%AD%E8%8F%AF%E8%88%AA%E7%A9%BA+%E8%A5%BF%E9%9B%85%E5%9C%96+%E5%8C%97%E7%BE%8E%E8%88%AA%E7%B7%9A&hl=zh-TW&gl=TW&ceid=TW:zh-Hant"
+          }
         ]
-      },
-      routes: {
-        title: "航線網絡佈局 (台灣出發)",
-        highlight: "北美越洋線 + 亞洲高收益航點",
-        details: [
-          "北美長程網：洛杉磯 (LAX)、舊金山 (SFO)、西雅圖 (SEA)、安大略 (ONT)，並積極評估鳳凰城/美東與歐洲航點（如布拉格）。",
-          "亞洲區域網：日本全線（東京/大阪/北海道/沖繩與二線城市）、東南亞（曼谷/清邁/宿霧/克拉克/胡志明/富國島等），主打高載客率與中轉接駁。"
-        ]
-      },
-      partners: {
-        title: "國際合作夥伴與聯盟策略",
-        highlight: "靈活雙邊合作 (優先於傳統入盟)",
-        details: [
-          "阿提哈德航空 (Etihad Airways)：擴大共掛班號與雙向哩程累積/兌換，直通中東與歐洲航網。",
-          "阿拉斯加航空 (Alaska Airlines)：北美內陸轉機與哩程深度合作夥伴；另表達中長期爭取加入「寰宇一家 (oneworld)」之意向。"
-        ]
-      },
-      timeline_logs: [
-        {
-          date: "2026-10-29",
-          category: "合作夥伴",
-          badge_color: "sky",
-          event: "與阿提哈德航空 (Etihad) 宣布開放雙向哩程累積與機票兌換，強化歐亞中轉網絡。",
-          source: "星宇官方 / 財經新聞",
-          url: "https://news.google.com/search?q=%E6%98%9F%E5%AE%87%E8%88%AA%E7%A9%BA+%E9%98%BF%E6%8F%90%E5%93%88%E5%BE%B7+%E5%93%A9%E7%A8%8B&hl=zh-TW&gl=TW&ceid=TW:zh-Hant"
-        },
-        {
-          date: "2026-09-23",
-          category: "資本與機隊",
-          badge_color: "amber",
-          event: "啟動現金增資 3 億股與發行無擔保轉換公司債（上限 20 億），同步推進 A330-900 售後租回計畫以充實營運資金。",
-          source: "公開資訊觀測站 / 財經新聞",
-          url: "https://news.google.com/search?q=%E6%98%9F%E5%AE%87%E8%88%AA%E7%A9%BA+%E7%8F%BE%E9%87%91%E5%A2%9E%E8%B3%87+3%E5%84%84%E8%82%A1+%E8%BD%89%E6%8F%9B%E5%85%AC%E5%8F%B8%E5%82%B5&hl=zh-TW&gl=TW&ceid=TW:zh-Hant"
-        },
-        {
-          date: "2026-08-05",
-          category: "機隊異動 (售後租回)",
-          badge_color: "emerald",
-          event: "公告處分 1 架剛交機 3 天之 A330-900 予租賃公司並辦理售後租回，單架認列處分利益約 1.6 億元（共規劃 3 架合計上限約 108 億）。",
-          source: "公開資訊觀測站重訊",
-          url: "https://news.google.com/search?q=%E6%98%9F%E5%AE%87%E8%88%AA%E7%A9%BA+A330-900+%E5%94%AE%E5%BE%8C%E7%A7%9F%E5%9B%9E&hl=zh-TW&gl=TW&ceid=TW:zh-Hant"
-        },
-        {
-          date: "2026-06-30",
-          category: "航網與機隊",
-          badge_color: "purple",
-          event: "持續接收新機投入北美與日本航線增班，惟受 Q2 高油價與交機前置成本影響，單季認列虧損 12.55 億元。",
-          source: "MOPS 季報 / 財經新聞",
-          url: "https://news.google.com/search?q=%E6%98%9F%E5%AE%87%E8%88%AA%E7%A9%BA+%E7%AC%AC%E4%BA%8C%E5%AD%A3+%E8%B2%A1%E5%A0%B1+12.55%E5%84%84&hl=zh-TW&gl=TW&ceid=TW:zh-Hant"
-        },
-        {
-          date: "2026-03-31",
-          category: "營運里程碑",
-          badge_color: "emerald",
-          event: "受惠 Q1 春節與寒假旅遊旺季高載客率，單季稅後淨利達 9.1 億元。",
-          source: "MOPS 季報 / 財經新聞",
-          url: "https://news.google.com/search?q=%E6%98%9F%E5%AE%87%E8%88%AA%E7%A9%BA+%E7%AC%AC%E4%B8%80%E5%AD%A3+%E7%A8%85%E5%BE%8C%E6%B7%A8%E5%88%A9+9.1%E5%84%84&hl=zh-TW&gl=TW&ceid=TW:zh-Hant"
-        }
-      ]
+      }
     };
 
-    const defaultFinanceOverview = {
-      metrics: [
-        {
-          label: "單季損益動態 (2026 Q1 vs Q2)",
-          value: "Q2 淨損 12.55 億元",
-          color: "rose",
-          subtext: "Q1 春節旺季賺 9.1 億，Q2 受高油價、無燃油避險與交機成本影響由盈轉虧。"
-        },
-        {
-          label: "短期償債與流動性 (流動比率)",
-          value: "0.8 倍 (前年底 1.11 倍)",
-          color: "amber",
-          subtext: "流動資產小於流動負債，主因為交機潮與桃園航空城基建資本支出龐大。"
-        },
-        {
-          label: "自由現金流狀況",
-          value: "上半年約 -77 億元",
-          color: "amber",
-          subtext: "前一年全年為 -154 億元，反映擴張期重資產投資現金流出大於營運流入。"
-        },
-        {
-          label: "三大資本防禦操作 (籌資總額)",
-          value: "最高約 188 億元",
-          color: "emerald",
-          subtext: "含 3 架 A339 售後租回 (~108億) + 現增 3 億股 (~50-60億) + 轉換公司債 (20億)。"
-        }
-      ],
-      history_logs: [
-        { date: "2026-09", type: "資本籌資", title: "現增 3 億股 + 轉換公司債 20 億", desc: "拉高流動比率與有形淨值，確保符合銀行聯貸年度檢核承諾。" },
-        { date: "2026-08", type: "資產活化", title: "3 架 A330-900 售後租回案 (約 108 億)", desc: "首架剛交機 3 天即完成售後租回，認列約 1.6 億元處分利益並收回現金。" },
-        { date: "2026-08", type: "Q2 財報", title: "2026 Q2 單季稅後淨損 12.55 億元", desc: "受地緣衝突高油價、遠期燃油避險歸零及新機交付折舊利息增加影響。" },
-        { date: "2026-05", type: "Q1 財報", title: "2026 Q1 單季稅後淨利 9.1 億元", desc: "春節與賞櫻旺季帶動日本與北美航線高載客率與高票價收益。" }
-      ],
-      debates: [
-        {
-          title: "📌 議題一：新機 A330-900 剛交機即「售後租回」(Sale and Leaseback, 3架總價約108億)",
-          tag: "資產活化 vs 現金救急",
-          bull: "全球航空公司擴張期常見手法。新機交機時市價高，轉售租賃公司再租回，不僅能單架認列約 1.6 億元處分利益美化財報，更能瞬間抱回百億現金、降低資產折舊負擔，維持機隊年輕化與財務彈性。",
-          bear: "質疑此舉是因現金流逼近枯竭、流動比率跌至 0.8 倍的被迫救急。售後租回雖換取短期現金，但未來每年需支付固定租金（使用權資產負債），若載客率或票價下滑，長期固定成本壓力仍在。",
-          pilot: "航空業本質是「高資本密集、高財務槓桿」產業。理解公司透過售後租回與現增來穩固成長期現金流，身為準飛行員更應認知到：嚴格遵守 SOP、精準計算燃油與準點率，就是第一線飛行員為公司守護現金流最直接的貢獻。"
-        },
-        {
-          title: "📌 議題二：銀行聯貸三項財務承諾（流動比/利息保障/淨值）與燃油避險策略",
-          tag: "風險控管 vs 擴張陣痛",
-          bull: "過去航空業曾因燃油避險看錯方向慘賠（如早年華航、國泰），因此不輕易重壓遠期燃油合約有其歷史教訓。面對聯貸年度檢核，管理層提前啟動現金增資 3 億股與發債，主動拉高淨值與流動比，展現強烈履約決心。",
-          bear: "資產負債比逾八成且機隊多已質押，董事長張國煒具連帶保證責任。在缺乏航空聯盟轉機護城河下，長程線面臨華航、長榮競爭，短程線又需與廉航比價，若地緣衝突推升油價，獲利空間易受擠壓。",
-          pilot: "展現你對星宇「不盲目加入聯盟，先以阿提哈德、阿拉斯加航空等雙邊共掛班號/哩程合作破局」的商業敏銳度，證明你能將公司新聞與財務策略融會貫通。"
-        }
-      ]
+    // 各航司專屬預設第 5 分頁「財務統計與正反觀點」
+    const defaultFinanceByCompany = {
+      starlux: {
+        metrics: [
+          { label: "單季損益動態 (2026 Q1 vs Q2)", value: "Q2 淨損 12.55 億元", color: "rose", subtext: "Q1 春節旺季賺 9.1 億，Q2 受高油價、無燃油避險與交機成本影響由盈轉虧。" },
+          { label: "短期償債與流動性 (流動比率)", value: "0.8 倍 (前年底 1.11 倍)", color: "amber", subtext: "流動資產小於流動負債，主因為交機潮與桃園航空城基建資本支出龐大。" },
+          { label: "自由現金流狀況", value: "上半年約 -77 億元", color: "amber", subtext: "反映擴張期重資產投資現金流出大於營運流入。" },
+          { label: "三大資本防禦操作 (籌資總額)", value: "最高約 188 億元", color: "emerald", subtext: "含 3 架 A339 售後租回 (~108億) + 現增 3 億股 (~50-60億) + 轉換公司債 (20億)。" }
+        ],
+        history_logs: [
+          { date: "2026-09", type: "資本籌資", title: "現增 3 億股 + 轉換公司債 20 億", desc: "拉高流動比率與有形淨值，確保符合銀行聯貸年度檢核承諾。" },
+          { date: "2026-08", type: "資產活化", title: "3 架 A330-900 售後租回案 (約 108 億)", desc: "首架剛交機 3 天即完成售後租回，認列約 1.6 億元處分利益並收回現金。" },
+          { date: "2026-08", type: "Q2 財報", title: "2026 Q2 單季稅後淨損 12.55 億元", desc: "受地緣衝突高油價、遠期燃油避險歸零及新機交付折舊利息增加影響。" },
+          { date: "2026-05", type: "Q1 財報", title: "2026 Q1 單季稅後淨利 9.1 億元", desc: "春節與賞櫻旺季帶動日本與北美航線高載客率與高票價收益。" }
+        ],
+        debates: [
+          {
+            title: "📌 議題一：新機 A330-900 剛交機即「售後租回」(Sale and Leaseback, 3架總價約108億)",
+            tag: "資產活化 vs 現金救急",
+            bull: "全球航空公司擴張期常見手法。新機交機時市價高，轉售租賃公司再租回，不僅能單架認列約 1.6 億元處分利益美化財報，更能瞬間抱回百億現金、降低資產折舊負擔，維持機隊年輕化與財務彈性。",
+            bear: "質疑此舉是因現金流逼近枯竭、流動比率跌至 0.8 倍的被迫救急。售後租回雖換取短期現金，但未來每年需支付固定租金（使用權資產負債），若載客率或票價下滑，長期固定成本壓力仍在。",
+            pilot: "航空業本質是「高資本密集、高財務槓桿」產業。理解公司透過售後租回與現增來穩固成長期現金流，身為準飛行員更應認知到：嚴格遵守 SOP、精準計算燃油與準點率，就是第一線飛行員為公司守護現金流最直接的貢獻。"
+          },
+          {
+            title: "📌 議題二：銀行聯貸三項財務承諾（流動比/利息保障/淨值）與燃油避險策略",
+            tag: "風險控管 vs 擴張陣痛",
+            bull: "過去航空業曾因燃油避險看錯方向慘賠，因此不輕易重壓遠期燃油合約有其歷史教訓。面對聯貸年度檢核，管理層提前啟動現金增資 3 億股與發債，主動拉高淨值與流動比，展現強烈履約決心。",
+            bear: "資產負債比逾八成且機隊多已質押。在缺乏航空聯盟轉機護城河下，長程線面臨華航、長榮競爭，短程線又需與廉航比價，若地緣衝突推升油價，獲利空間易受擠壓。",
+            pilot: "展現你對星宇「不盲目加入聯盟，先以阿提哈德、美國航空、阿拉斯加航空等雙邊共掛班號/哩程合作破局」的商業敏銳度，證明你能將公司新聞與財務策略融會貫通。"
+          }
+        ]
+      },
+      cal: {
+        metrics: [
+          { label: "客貨雙引擎營收結構", value: "單月營收穩居百億級", color: "emerald", subtext: "歐洲與東北亞客運維持高載客率，搭配高運價 AI 伺服器貨運支撐獲利。" },
+          { label: "航空貨運護城河", value: "747F + 777F 雙機隊", color: "sky", subtext: "受惠台灣半導體與 AI 供應鏈空運急單，貨運收益率顯著高於疫情前水準。" },
+          { label: "機隊汰舊換新資本支出", value: "24 架波音 787 訂單", color: "amber", subtext: "因應 A330-300 逐步退役，未來數年進入廣體客機交付與資本支出高峰期。" },
+          { label: "國際聯盟與 ESG 評級", value: "SkyTeam + DJSI 認證", color: "emerald", subtext: "天合聯盟全球轉機護城河穩固，並持續擴大永續航空燃油 (SAF) 採購比例。" }
+        ],
+        history_logs: [
+          { date: "2026-10", type: "月營收動態", title: "Q4 傳統貨運旺季與 AI 空運需求發威", desc: "歐美長程貨機艙位滿載，客運受惠秋冬日韓旅遊旺季維持高檔表現。" },
+          { date: "2026-08", type: "半年報亮點", title: "客貨運雙引擎帶動上半年獲利穩健成長", desc: "東北亞與北美航線高收益客群穩定，營業利益率維持國籍航空前段班。" },
+          { date: "2026-06", type: "機隊與資本", title: "擴充次世代廣體客貨機運能規劃", desc: "持續引進 A321neo 並推進 787 機隊交付時程，強化長程與區域航網競爭力。" }
+        ],
+        debates: [
+          {
+            title: "📌 議題一：華航「客貨雙引擎（747-400F / 777F 全貨機優勢）」對抗景氣循環之核心價值",
+            tag: "AI 貨運紅利 vs 全球景氣波動",
+            bull: "華航擁有全球名列前茅的全貨機機隊規模。當客運票價自疫情後高點逐步正常化時，台灣作為全球 AI 伺服器與高階晶片中心，高附加價值空運需求成為華航最強大的獲利第二引擎，抗風險能力遠勝純客運航司。",
+            bear: "航空貨運高度仰賴全球經貿與科技業資本支出週期，且 747-400F 機齡漸長、油耗較高；若全球終端消費放緩或海運運價回落，貨運高運價紅利可能面臨收斂壓力。",
+            pilot: "面試華航培訓機師時，應展現對「客機與全貨機雙軌派遣」的熱忱與理解。無論未來分發至 A321neo、A350、777、787 或 747F/777F 貨機機隊，皆是支撐公司全球供應鏈命脈的核心戰力。"
+          },
+          {
+            title: "📌 議題二：波音 787 與空巴 A350/A321neo「雙主流機隊世代交替」與供應鏈延遲挑戰",
+            tag: "機隊現代化 vs 製造商交機延宕",
+            bull: "同時採用 Airbus 與 Boeing 主流機型，能避免單一製造商出問題時全機隊停擺的風險，並在購機談判上保有議價空間。引進 787 取代老舊 A330 後，燃油效率與客艙產品力將大幅躍升。",
+            bear: "全球航太供應鏈（波音與空巴、發動機大廠）面臨交機延遲與維修料件短缺，導致舊機延役維修成本增加；同時維持多機種亦會提高飛行員轉訓、機務維修與零件庫存的管理複雜度。",
+            pilot: "這正是華航持續穩定招募並自訓「培訓機師」的關鍵原因！因為從受訓完訓到成為合格副機師（FO）需時約 2 年，正好完美銜接未來 787 與新機陸續到位的機師人力缺口。"
+          }
+        ]
+      }
     };
 
-    // Milestone 5 升級：前端雙重嚴格雜訊攔截（確保就算舊 data.json 還沒重跑，打開網頁也瞬間清零）
+    // 支援星宇 + 華航 + 手動 IG 貼文的雙重雜訊攔截器
     function isIrrelevantNoise(article) {
+      if (article.is_manual === true) return false;
+      const rawTitle = (article.translated_title || '') + ' ' + (article.title || '');
+      if (rawTitle.includes('官方IG') || rawTitle.includes('Instagram')) return false;
       if (article.is_relevant === false) return true;
-      const text = ((article.translated_title || '') + ' ' + (article.title || '') + ' ' + (article.summary || '')).toLowerCase();
+
+      const text = (rawTitle + ' ' + (article.summary || '')).toLowerCase();
       const noiseKeywords = [
         '不涉及民航', '與航空業無關', '與航空無關', '與航空公司營運', '並無相關性', '無直接關聯',
         '不具參考效益', '不具面試參考', '純屬外部政論', '不屬於培訓機師需掌握', '無任何航空政策',
@@ -415,9 +494,11 @@
       if (noiseKeywords.some(kw => text.includes(kw))) return true;
 
       const aviationCore = [
-        '星宇', 'starlux', '航空', '機師', '飛行', '培訓', '張國煒', '機隊', '交機',
-        '航線', '開航', '航點', '轉機', '機場', '民航', 'a321', 'a330', 'a350',
-        'airbus', '空巴', '波音', '載客率', '票價', '哩程', '阿提哈德', '阿拉斯加', '售後租回', '2646'
+        '星宇', 'starlux', '華航', '中華航空', 'china airlines', 'cal', '2646', '2610',
+        '航空', '機師', '飛行', '培訓', '張國煒', '高星潢', '謝世謙', '陳漢銘',
+        '機隊', '交機', '航線', '開航', '航點', '轉機', '機場', '民航',
+        'a321', 'a330', 'a350', 'airbus', '空巴', '波音', 'boeing', '777', '787', '747', '737',
+        '載客率', '票價', '哩程', '阿提哈德', '阿拉斯加', '天合聯盟', 'skyteam', '售後租回', 'saf'
       ];
       return !aviationCore.some(kw => text.includes(kw));
     }
@@ -434,6 +515,7 @@
       }
 
       function isSameEvent(artA, artB) {
+        if (artA.is_manual || artB.is_manual) return false;
         const textA = (artA.translated_title || artA.title || '') + (artA.summary || '');
         const textB = (artB.translated_title || artB.title || '') + (artB.summary || '');
         const eventKeywords = ['阿提哈德', '售後租回', '現金增資', '鳳凰城', '布拉格', '聯名卡'];
@@ -470,18 +552,48 @@
       return uniqueList;
     }
 
-    // 自動相容字典或陣列格式的 data.json
+    // 自動確保 data.json 內一定同時擁有「星宇航空 (starlux)」與「中華航空 (cal)」
     function normalizeLoadedData(data) {
       if (!data) return;
-      (data.companies || []).forEach(comp => {
+      if (!Array.isArray(data.companies)) {
+        data.companies = [];
+      }
+
+      // 若舊版 data.json 還沒跑出中華航空，前端自動掛載華航結構讓切換按鈕立即生效！
+      const hasCal = data.companies.some(c => (c.company_id || c.id) === 'cal');
+      if (!hasCal) {
+        data.companies.push({
+          company_id: 'cal',
+          company_name: '中華航空',
+          company_profile: defaultProfilesByCompany.cal,
+          finance_overview: defaultFinanceByCompany.cal,
+          categories: ['cat1', 'cat2', 'cat3', 'cat4'].map(cid => ({
+            category_id: cid,
+            category_name: defaultCategoryMetaByCompany.cal[cid].name,
+            overall_summary: defaultCategoryMetaByCompany.cal[cid].summary,
+            articles: []
+          }))
+        });
+      }
+
+      data.companies.forEach(comp => {
         comp.company_id = comp.company_id || comp.id || 'starlux';
-        comp.company_name = comp.company_name || comp.name || '星宇航空 STARLUX';
-        if (comp.categories && !Array.isArray(comp.categories) && typeof comp.categories === 'object') {
+        comp.company_name = comp.company_name || comp.name || (comp.company_id === 'cal' ? '中華航空' : '星宇航空');
+        const metaGroup = defaultCategoryMetaByCompany[comp.company_id] || defaultCategoryMetaByCompany.starlux;
+
+        if (!comp.categories || (Array.isArray(comp.categories) && comp.categories.length === 0)) {
+          comp.categories = ['cat1', 'cat2', 'cat3', 'cat4'].map(cid => ({
+            category_id: cid,
+            category_name: metaGroup[cid].name,
+            overall_summary: metaGroup[cid].summary,
+            articles: []
+          }));
+        } else if (!Array.isArray(comp.categories) && typeof comp.categories === 'object') {
           const dictCats = comp.categories;
           comp.categories = ['cat1', 'cat2', 'cat3', 'cat4'].map(cid => ({
             category_id: cid,
-            category_name: defaultCategoryMeta[cid].name,
-            overall_summary: defaultCategoryMeta[cid].summary,
+            category_name: metaGroup[cid].name,
+            overall_summary: metaGroup[cid].summary,
             articles: Array.isArray(dictCats[cid]) ? dictCats[cid] : []
           }));
         }
@@ -534,8 +646,12 @@
     });
 
     function renderHeaderStatus() {
-      document.getElementById('last-updated').textContent = appData.last_updated || '未知';
-      const cursor = appData.backfill_cursor || '推進中';
+      const company = getCurrentCompany();
+      const defProfile = defaultProfilesByCompany[currentCompanyId] || defaultProfilesByCompany.starlux;
+      document.getElementById('header-company-badge').textContent = defProfile.badgeText;
+
+      document.getElementById('last-updated').textContent = (company && company.last_updated) || appData.last_updated || '未知';
+      const cursor = (company && company.backfill_cursor) || appData.backfill_cursor || '推進中';
       const target = appData.backfill_target_stop || '2025-09-01';
       if (cursor <= target) {
         document.getElementById('backfill-status').innerHTML = '🎉 已完整回溯至 ' + target;
@@ -548,20 +664,23 @@
       const container = document.getElementById('company-selector');
       container.innerHTML = '';
       const existingIds = new Set();
+
       (appData.companies || []).forEach(company => {
         existingIds.add(company.company_id);
         const isActive = company.company_id === currentCompanyId;
         const btn = document.createElement('button');
         btn.className = isActive
-          ? 'px-3.5 py-1.5 rounded-lg text-xs font-bold gold-gradient text-slate-950 shadow-sm shrink-0'
-          : 'px-3.5 py-1.5 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 shrink-0 transition';
-        btn.textContent = company.company_name;
+          ? 'px-4 py-1.5 rounded-lg text-xs font-bold gold-gradient text-slate-950 shadow-sm shrink-0 flex items-center gap-1.5'
+          : 'px-4 py-1.5 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 shrink-0 transition flex items-center gap-1.5';
+        btn.innerHTML = `<span>✈️</span><span>${company.company_name}</span>`;
         btn.onclick = () => {
           currentCompanyId = company.company_id;
-          if (company.categories && company.categories.length > 0) {
-            currentCategoryId = company.categories[0].category_id;
+          if ( currentCategoryId !== 'finance_special' && company.categories && company.categories.length > 0) {
+            const hasSameCat = company.categories.some(c => c.category_id === currentCategoryId);
+            if (!hasSameCat) currentCategoryId = company.categories[0].category_id;
           }
           resetFilters();
+          renderHeaderStatus();
           renderCompanySelector();
           renderCategoryTabs();
           populateMonthFilter();
@@ -606,7 +725,7 @@
       };
     }
 
-    // 渲染第 1 分頁頂部的「公司基本盤 + 近 5 筆異動 Time Scale (含參考連結按鈕)」
+    // 渲染第 1 分頁頂部的「公司基本盤 + 近 5 筆異動 Time Scale」
     function renderCompanyProfileSection(company) {
       const section = document.getElementById('company-profile-section');
       if (currentCategoryId !== 'cat1') {
@@ -615,15 +734,18 @@
       }
       section.classList.remove('hidden');
 
+      const defProfile = defaultProfilesByCompany[currentCompanyId] || defaultProfilesByCompany.starlux;
+      document.getElementById('profile-company-title').textContent = defProfile.profileHeaderTitle;
+
       const rawProfile = (company && company.company_profile) ? company.company_profile : {};
       const cardsGrid = document.getElementById('profile-cards-grid');
       cardsGrid.innerHTML = '';
 
       const blocks = [
-        { icon: '🧭', data: formatProfileBlock(rawProfile.philosophy, defaultCompanyProfile.philosophy), border: 'border-amber-500/30' },
-        { icon: '🛫', data: formatProfileBlock(rawProfile.fleet || rawProfile.fleet_summary, defaultCompanyProfile.fleet), border: 'border-sky-500/30' },
-        { icon: '🌏', data: formatProfileBlock(rawProfile.routes || rawProfile.route_summary, defaultCompanyProfile.routes), border: 'border-emerald-500/30' },
-        { icon: '🤝', data: formatProfileBlock(rawProfile.partners, defaultCompanyProfile.partners), border: 'border-purple-500/30' }
+        { icon: '🧭', data: formatProfileBlock(rawProfile.philosophy, defProfile.philosophy), border: 'border-amber-500/30' },
+        { icon: '🛫', data: formatProfileBlock(rawProfile.fleet || rawProfile.fleet_summary, defProfile.fleet), border: 'border-sky-500/30' },
+        { icon: '🌏', data: formatProfileBlock(rawProfile.routes || rawProfile.route_summary, defProfile.routes), border: 'border-emerald-500/30' },
+        { icon: '🤝', data: formatProfileBlock(rawProfile.partners, defProfile.partners), border: 'border-purple-500/30' }
       ];
 
       blocks.forEach(b => {
@@ -643,12 +765,11 @@
         cardsGrid.appendChild(div);
       });
 
-      // 渲染近 5 筆異動 Time Scale + 參考連結按鈕
       const timelineList = document.getElementById('profile-timeline-list');
       timelineList.innerHTML = '';
       const rawLogs = (Array.isArray(rawProfile.timeline_logs) && rawProfile.timeline_logs.length > 0)
         ? rawProfile.timeline_logs
-        : defaultCompanyProfile.timeline_logs;
+        : defProfile.timeline_logs;
       const logs = rawLogs.slice(0, 5);
 
       const badgeColors = {
@@ -658,15 +779,16 @@
         purple: 'bg-purple-500/20 text-purple-300 border-purple-500/30'
       };
 
+      const companyNamePrefix = (company && company.company_name) ? company.company_name : '星宇航空';
+
       logs.forEach((log, index) => {
         const catLabel = log.category || log.type || '重要異動';
         const eventText = log.event || (log.title ? `【${log.title}】${log.detail || ''}` : '');
         const sourceLabel = log.source || '新聞查證';
         const colorClass = badgeColors[log.badge_color] || badgeColors.amber;
 
-        // 若該筆紀錄無直接 URL，自動生成 Google News 精準搜尋連結，確保 100% 有參考連結可點
         const directUrl = log.url || log.link || '';
-        const searchQuery = encodeURIComponent('星宇航空 ' + (log.title || eventText.substring(0, 22)));
+        const searchQuery = encodeURIComponent(companyNamePrefix + ' ' + (log.title || eventText.substring(0, 22)));
         const targetUrl = directUrl ? directUrl : `https://news.google.com/search?q=${searchQuery}&hl=zh-TW&gl=TW&ceid=TW:zh-Hant`;
         const btnText = directUrl ? `🔗 參考連結 (${sourceLabel}) ↗` : `🔍 檢索新聞 (${sourceLabel}) ↗`;
 
@@ -693,7 +815,11 @@
     }
 
     function renderFinanceDashboard(company) {
-      const finData = (company && company.finance_overview) ? company.finance_overview : defaultFinanceOverview;
+      const defProfile = defaultProfilesByCompany[currentCompanyId] || defaultProfilesByCompany.starlux;
+      const defFin = defaultFinanceByCompany[currentCompanyId] || defaultFinanceByCompany.starlux;
+      document.getElementById('finance-company-title').textContent = defProfile.financeHeaderTitle;
+
+      const finData = (company && company.finance_overview) ? company.finance_overview : {};
 
       const metricsGrid = document.getElementById('finance-metrics-grid');
       metricsGrid.innerHTML = '';
@@ -704,7 +830,8 @@
         sky: 'text-sky-400'
       };
 
-      (finData.metrics || defaultFinanceOverview.metrics).forEach(m => {
+      const activeMetrics = (Array.isArray(finData.metrics) && finData.metrics.length > 0) ? finData.metrics : defFin.metrics;
+      activeMetrics.forEach(m => {
         const c = colorMap[m.color] || 'text-amber-400';
         const card = document.createElement('div');
         card.className = 'bg-slate-900 p-4 rounded-xl border border-slate-800';
@@ -724,7 +851,7 @@
 
       const rawFinLogs = (Array.isArray(finData.history_logs) && finData.history_logs.length > 0)
         ? finData.history_logs
-        : defaultFinanceOverview.history_logs;
+        : defFin.history_logs;
 
       const combinedLogs = rawFinLogs.map(item => ({
         date: item.date || item.period || '近期',
@@ -765,7 +892,8 @@
 
       const debatesList = document.getElementById('finance-debates-list');
       debatesList.innerHTML = '';
-      (finData.debates || defaultFinanceOverview.debates).forEach(d => {
+      const activeDebates = (Array.isArray(finData.debates) && finData.debates.length > 0) ? finData.debates : defFin.debates;
+      activeDebates.forEach(d => {
         const box = document.createElement('div');
         box.className = 'bg-slate-900/90 rounded-xl p-5 border border-slate-800';
         box.innerHTML = `
@@ -775,11 +903,11 @@
           </div>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs sm:text-sm">
             <div class="bg-emerald-950/30 border border-emerald-500/30 rounded-lg p-3.5">
-              <div class="font-bold text-emerald-400 mb-1.5">🟢 正方觀點 (航空業標準財務操作)</div>
+              <div class="font-bold text-emerald-400 mb-1.5">🟢 正方觀點 (公司優勢與標準財務操作)</div>
               <p class="text-slate-300 leading-relaxed">${d.bull}</p>
             </div>
             <div class="bg-rose-950/30 border border-rose-500/30 rounded-lg p-3.5">
-              <div class="font-bold text-rose-400 mb-1.5">🔴 反方隱憂 (社群與看空財經評論)</div>
+              <div class="font-bold text-rose-400 mb-1.5">🔴 反方隱憂 (市場風險與產業挑戰)</div>
               <p class="text-slate-300 leading-relaxed">${d.bear}</p>
             </div>
             <div class="bg-sky-950/30 border border-sky-500/30 rounded-lg p-3.5">
@@ -871,12 +999,18 @@
       });
     }
 
-    function getLangBadge(lang, mergedCount) {
-      let badge = lang === 'en'
-        ? '<span class="px-2 py-0.5 text-[11px] font-semibold rounded bg-sky-500/20 text-sky-300 border border-sky-500/30">EN 外電翻譯</span>'
-        : '<span class="px-2 py-0.5 text-[11px] font-semibold rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">ZH 華文媒體</span>';
-      if (mergedCount && mergedCount > 1) {
-        badge += ` <span class="px-2 py-0.5 text-[11px] rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">🔗 已合併 ${mergedCount} 篇同事件報導</span>`;
+    function getLangBadge(art) {
+      const isIG = art.is_manual || (art.title && art.title.includes('官方IG'));
+      let badge = '';
+      if (isIG) {
+        badge = '<span class="px-2 py-0.5 text-[11px] font-semibold rounded bg-pink-500/20 text-pink-300 border border-pink-500/30">📸 官方 IG 精選</span>';
+      } else if (art.lang === 'en') {
+        badge = '<span class="px-2 py-0.5 text-[11px] font-semibold rounded bg-sky-500/20 text-sky-300 border border-sky-500/30">EN 外電翻譯</span>';
+      } else {
+        badge = '<span class="px-2 py-0.5 text-[11px] font-semibold rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">ZH 華文媒體</span>';
+      }
+      if (art.merged_count && art.merged_count > 1) {
+        badge += ` <span class="px-2 py-0.5 text-[11px] rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">🔗 已合併 ${art.merged_count} 篇同事件報導</span>`;
       }
       return badge;
     }
@@ -912,7 +1046,8 @@
       const category = getCurrentCategory();
       if (!category) return;
 
-      document.getElementById('overall-summary').textContent = category.overall_summary || defaultCategoryMeta[currentCategoryId]?.summary || '目前尚無綜合分析資料。';
+      const metaGroup = defaultCategoryMetaByCompany[currentCompanyId] || defaultCategoryMetaByCompany.starlux;
+      document.getElementById('overall-summary').textContent = category.overall_summary || metaGroup[currentCategoryId]?.summary || '目前尚無綜合分析資料。';
 
       const { cleaned, removedNoise, mergedDuplicates } = getCleanedArticles(category);
       document.getElementById('filter-stats').textContent = `已合併 ${mergedDuplicates} 篇重複報導 · 攔截 ${removedNoise} 篇非航空雜訊`;
@@ -925,7 +1060,7 @@
       topGrid.innerHTML = '';
 
       if (top3Articles.length === 0) {
-        topGrid.innerHTML = '<div class="col-span-3 text-center py-8 text-slate-500 text-sm">此分類過濾雜訊後目前尚無情報文章。</div>';
+        topGrid.innerHTML = '<div class="col-span-3 text-center py-8 bg-slate-900/50 rounded-xl border border-slate-800 text-slate-400 text-sm">此航司分類目前正在等待 GitHub Actions 自動抓取與回溯新聞中（可至 GitHub Actions 點擊 Run workflow 立即更新）。</div>';
       } else {
         top3Articles.forEach((art, idx) => {
           const displayTitle = art.translated_title || art.title;
@@ -937,7 +1072,7 @@
               <div class="flex items-center justify-between gap-2 mb-3 flex-wrap">
                 <div class="flex items-center gap-1.5 flex-wrap">
                   <span class="px-2 py-0.5 text-[11px] font-bold rounded gold-gradient text-slate-950">TOP ${idx + 1}</span>
-                  ${getLangBadge(art.lang, art.merged_count)}
+                  ${getLangBadge(art)}
                 </div>
                 <span class="text-xs font-mono text-slate-400">${art.published_at || '未知日期'}</span>
               </div>
@@ -1000,7 +1135,7 @@
           <div class="space-y-1.5 flex-grow">
             <div class="flex flex-wrap items-center gap-2">
               <span class="text-xs font-mono text-amber-400/90 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">${art.published_at || '未知日期'}</span>
-              ${getLangBadge(art.lang, art.merged_count)}
+              ${getLangBadge(art)}
               <a href="${art.link}" target="_blank" rel="noopener noreferrer" class="text-sm sm:text-base font-bold text-slate-100 hover:text-amber-300 transition">${displayTitle}</a>
             </div>
             ${showOriginalTitle ? `<p class="text-xs text-slate-400 italic">${art.title}</p>` : ''}
