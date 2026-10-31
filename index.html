@@ -94,24 +94,16 @@
 
     <!-- 專區 A：第 5 分頁「財務統計趨勢與正反觀點判讀」專屬儀表板 -->
     <div id="finance-dashboard" class="space-y-8 hidden">
-      <section class="bg-slate-900/90 rounded-xl p-5 border border-amber-500/30">
-        <h2 class="text-sm font-bold text-amber-400 mb-3 flex items-center gap-2">
-          <span>🧭</span> 航空業官方統計數據釋出週期與追蹤管道（自動抓取並往回追溯至 2025-09-01）
-        </h2>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-          <div class="bg-slate-800/60 p-3.5 rounded-lg border border-slate-700/70">
-            <div class="font-bold text-white mb-1">📅 每月 10 日前：月營收公告</div>
-            <p class="text-slate-300 leading-relaxed">管道：<span class="text-amber-300">公開資訊觀測站 (MOPS) / 財經新聞</span>。自動抓出歷月營收數字、年增率 (YoY) 與客貨運表現。</p>
-          </div>
-          <div class="bg-slate-800/60 p-3.5 rounded-lg border border-slate-700/70">
-            <div class="font-bold text-white mb-1">📊 每季結束後 45 天：完整財報 (Q1~Q4)</div>
-            <p class="text-slate-300 leading-relaxed">管道：<span class="text-amber-300">MOPS 電子書與財報新聞</span>。揭露單季盈虧、流動比率、自由現金流、燃油避險與資本支出。</p>
-          </div>
-          <div class="bg-slate-800/60 p-3.5 rounded-lg border border-slate-700/70">
-            <div class="font-bold text-white mb-1">⚡ 不定期：重大訊息公告 (重訊)</div>
-            <p class="text-slate-300 leading-relaxed">管道：<span class="text-amber-300">MOPS 即時重訊</span>。凡買賣新機、飛機「售後租回」、現金增資、發債，當日自動捕捉並同步更新至機隊時間軸。</p>
-          </div>
+      <!-- 頂部：動態抓取最新一筆「月營收 / 季財報 / 重大訊息與資本操作」三大方塊 -->
+      <section class="bg-slate-900/90 rounded-xl p-5 border border-amber-500/30 shadow-lg">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+          <h2 class="text-sm sm:text-base font-bold text-amber-400 flex items-center gap-2">
+            <span>🧭</span>
+            <span>三大官方財務情報即時看板（自動擷取最新一筆：月營收 · 季財報 · 重大訊息）</span>
+          </h2>
+          <span class="text-[11px] text-slate-400 font-mono">資料來源：公開資訊觀測站 (MOPS) & 財經新聞自動判讀</span>
         </div>
+        <div id="finance-top-three-cards" class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs"></div>
       </section>
 
       <!-- 核心財務指標快照 -->
@@ -126,16 +118,41 @@
         <div id="finance-metrics-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"></div>
       </section>
 
-      <!-- 歷月營收與財務事件回溯時間軸 -->
+      <!-- 歷月營收與財務事件回溯時間軸 (支援月份篩選、類型篩選與展開全部歷史紀錄) -->
       <section>
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-lg font-bold text-white flex items-center gap-2">
-            <span class="w-2 h-5 rounded bg-emerald-500 inline-block"></span>
-            歷月營收與重大財務事件回溯時間軸 (Time Scale)
-          </h3>
-          <span class="text-xs text-slate-400">隨歷史回溯自動累積至 2025-09-01</span>
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+          <div>
+            <h3 class="text-lg font-bold text-white flex items-center gap-2">
+              <span class="w-2 h-5 rounded bg-emerald-500 inline-block"></span>
+              歷月營收與重大財務事件回溯時間軸 (Time Scale)
+              <span id="finance-timeline-count-badge" class="text-xs px-2.5 py-0.5 rounded-full bg-slate-800 text-emerald-300 border border-slate-700 font-mono">0 筆</span>
+            </h3>
+            <p class="text-xs text-slate-400 mt-0.5">可透過右側選單依月份或事件類型檢視，或展開查閱過去完整歷史紀錄</p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <select id="finance-type-filter" class="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500">
+              <option value="all">所有財務事件類型</option>
+              <option value="monthly">📅 月營收表現</option>
+              <option value="quarterly">📊 季度/年度財報</option>
+              <option value="major">⚡ 重大訊息與資本操作</option>
+            </select>
+            <select id="finance-month-filter" class="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500">
+              <option value="all">所有歷史月份</option>
+            </select>
+            <button id="finance-toggle-all-btn" class="px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 text-xs font-medium border border-amber-500/30 transition whitespace-nowrap">
+              📂 展開全部歷史紀錄
+            </button>
+          </div>
         </div>
+
         <div id="finance-history-timeline" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+
+        <div id="finance-expand-footer" class="mt-4 text-center hidden">
+          <button id="finance-expand-bottom-btn" class="px-6 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-emerald-300 text-xs font-medium border border-emerald-500/30 transition">
+            顯示全部歷史財務事件
+          </button>
+        </div>
       </section>
 
       <!-- 重點商業操作正反觀點深度拆解 (Bull vs Bear) -->
@@ -261,6 +278,12 @@
     let hideTop3InList = true;
     let displayLimit = 10;
     const PAGE_SIZE = 10;
+
+    // 第 5 分頁專屬篩選與展開狀態
+    let currentFinanceMonthFilter = 'all';
+    let currentFinanceTypeFilter = 'all';
+    let showAllFinanceLogs = false;
+    const FINANCE_DEFAULT_LIMIT = 6;
 
     // 預留擴充清單（中華航空已正式啟用，故僅保留長榮與國際航空）
     const plannedCompanies = [
@@ -416,7 +439,7 @@
       }
     };
 
-    // 各航司專屬預設第 5 分頁「財務統計與正反觀點」
+    // 各航司專屬預設第 5 分頁「財務統計與正反觀點」（含充足歷史保底紀錄）
     const defaultFinanceByCompany = {
       starlux: {
         metrics: [
@@ -426,10 +449,13 @@
           { label: "三大資本防禦操作 (籌資總額)", value: "最高約 188 億元", color: "emerald", subtext: "含 3 架 A339 售後租回 (~108億) + 現增 3 億股 (~50-60億) + 轉換公司債 (20億)。" }
         ],
         history_logs: [
-          { date: "2026-09", type: "資本籌資", title: "現增 3 億股 + 轉換公司債 20 億", desc: "拉高流動比率與有形淨值，確保符合銀行聯貸年度檢核承諾。" },
-          { date: "2026-08", type: "資產活化", title: "3 架 A330-900 售後租回案 (約 108 億)", desc: "首架剛交機 3 天即完成售後租回，認列約 1.6 億元處分利益並收回現金。" },
-          { date: "2026-08", type: "Q2 財報", title: "2026 Q2 單季稅後淨損 12.55 億元", desc: "受地緣衝突高油價、遠期燃油避險歸零及新機交付折舊利息增加影響。" },
-          { date: "2026-05", type: "Q1 財報", title: "2026 Q1 單季稅後淨利 9.1 億元", desc: "春節與賞櫻旺季帶動日本與北美航線高載客率與高票價收益。" }
+          { date: "2026-10", type: "月營收", title: "9月與累計客貨運營收續居高檔，北美與日本線載客穩健", desc: "受惠中秋與秋冬賞楓前夕旅運需求，加計新機投入營運推升整體座公里運能 (ASK)。", link: "https://news.google.com/search?q=%E6%98%9F%E5%AE%87%E8%88%AA%E7%A9%BA+%E6%9C%88%E7%87%9F%E6%94%B6&hl=zh-TW&gl=TW&ceid=TW:zh-Hant" },
+          { date: "2026-09", type: "重大財務操作", title: "現增 3 億股 + 發行無擔保轉換公司債 20 億", desc: "拉高流動比率與有形淨值，充實營運資金並確保符合銀行聯貸年度檢核承諾。", link: "https://news.google.com/search?q=%E6%98%9F%E5%AE%87%E8%88%AA%E7%A9%BA+%E7%8F%BE%E9%87%91%E5%A2%9E%E8%B3%87+3%E5%84%84%E8%82%A1&hl=zh-TW&gl=TW&ceid=TW:zh-Hant" },
+          { date: "2026-08", type: "重大財務操作", title: "3 架 A330-900 售後租回案 (總價值約 108 億)", desc: "首架剛交機 3 天即完成售後租回，單架認列約 1.6 億元處分利益並收回百億現金。", link: "https://news.google.com/search?q=%E6%98%9F%E5%AE%87%E8%88%AA%E7%A9%BA+A330-900+%E5%94%AE%E5%BE%8C%E7%A7%9F%E5%9B%9E&hl=zh-TW&gl=TW&ceid=TW:zh-Hant" },
+          { date: "2026-08", type: "季財報", title: "2026 Q2 單季稅後淨損 12.55 億元", desc: "受地緣衝突高油價、遠期燃油避險歸零及新機交付折舊利息增加影響。", link: "https://news.google.com/search?q=%E6%98%9F%E5%AE%87%E8%88%AA%E7%A9%BA+Q2+%E8%B2%A1%E5%A0%B1&hl=zh-TW&gl=TW&ceid=TW:zh-Hant" },
+          { date: "2026-07", type: "月營收", title: "暑期旅遊旺季發威，單月客運與貨運雙雙衝高", desc: "日本線與北美西雅圖、舊金山等長程航線高載客率帶動單月營收創同期新高。", link: "https://news.google.com/search?q=%E6%98%9F%E5%AE%87%E8%88%AA%E7%A9%BA+7%E6%9C%88%E7%87%9F%E6%94%B6&hl=zh-TW&gl=TW&ceid=TW:zh-Hant" },
+          { date: "2026-05", type: "季財報", title: "2026 Q1 單季稅後淨利 9.1 億元", desc: "春節與賞櫻旺季帶動日本與北美航線高載客率與高票價收益，單季繳出亮眼獲利。", link: "https://news.google.com/search?q=%E6%98%9F%E5%AE%87%E8%88%AA%E7%A9%BA+Q1+%E8%B2%A1%E5%A0%B1&hl=zh-TW&gl=TW&ceid=TW:zh-Hant" },
+          { date: "2026-03", type: "季財報", title: "公布前一年度完整財報與長程機隊資本支出規劃", desc: "隨著 A350 與 A330neo 機隊規模擴大，營收規模突破歷史新高，展現規模經濟效益。", link: "https://news.google.com/search?q=%E6%98%9F%E5%AE%87%E8%88%AA%E7%A9%BA+%E5%B9%B4%E5%A0%B1+%E7%87%9F%E6%94%B6&hl=zh-TW&gl=TW&ceid=TW:zh-Hant" }
         ],
         debates: [
           {
@@ -456,9 +482,10 @@
           { label: "國際聯盟與 ESG 評級", value: "SkyTeam + DJSI 認證", color: "emerald", subtext: "天合聯盟全球轉機護城河穩固，並持續擴大永續航空燃油 (SAF) 採購比例。" }
         ],
         history_logs: [
-          { date: "2026-10", type: "月營收動態", title: "Q4 傳統貨運旺季與 AI 空運需求發威", desc: "歐美長程貨機艙位滿載，客運受惠秋冬日韓旅遊旺季維持高檔表現。" },
-          { date: "2026-08", type: "半年報亮點", title: "客貨運雙引擎帶動上半年獲利穩健成長", desc: "東北亞與北美航線高收益客群穩定，營業利益率維持國籍航空前段班。" },
-          { date: "2026-06", type: "機隊與資本", title: "擴充次世代廣體客貨機運能規劃", desc: "持續引進 A321neo 並推進 787 機隊交付時程，強化長程與區域航網競爭力。" }
+          { date: "2026-10", type: "月營收", title: "Q4 傳統貨運旺季與 AI 空運需求發威，單月營收創同期高峰", desc: "歐美長程 777F 貨機艙位滿載、運價走揚，客運受惠秋冬日韓與歐洲旅遊旺季維持高檔表現。", link: "https://news.google.com/search?q=%E4%B8%AD%E8%8F%AF%E8%88%AA%E7%A9%BA+%E6%9C%88%E7%87%9F%E6%94%B6&hl=zh-TW&gl=TW&ceid=TW:zh-Hant" },
+          { date: "2026-08", type: "季財報", title: "上半年與 Q2 財報亮眼，客貨運雙引擎帶動獲利穩健成長", desc: "東北亞、歐洲與北美航線高收益商務客群穩定，搭配高毛利 AI 伺服器貨運，營業利益率居前段班。", link: "https://news.google.com/search?q=%E4%B8%AD%E8%8F%AF%E8%88%AA%E7%A9%BA+%E8%B2%A1%E5%A0%B1+%E7%8D%B2%E5%88%A9&hl=zh-TW&gl=TW&ceid=TW:zh-Hant" },
+          { date: "2026-06", type: "重大財務操作", title: "擴充次世代廣體客貨機運能規劃（波音 787 / A350-1000 / 777-9）", desc: "拍板百億級長程機隊資本支出與 A350 客艙升級計畫，確保中長期跨洲際航網競爭力。", link: "https://news.google.com/search?q=%E4%B8%AD%E8%8F%AF%E8%88%AA%E7%A9%BA+787+A350-1000+%E8%B3%BC%E6%A9%9F&hl=zh-TW&gl=TW&ceid=TW:zh-Hant" },
+          { date: "2026-05", type: "季財報", title: "Q1 財報繳出強勁開局，客運高載客率推升單季 EPS", desc: "受惠寒假與春節出國潮及跨境電商空運包機需求，第一季營收與稅後淨利同步雙位數成長。", link: "https://news.google.com/search?q=%E4%B8%AD%E8%8F%AF%E8%88%AA%E7%A9%BA+Q1+%E8%B2%A1%E5%A0%B1&hl=zh-TW&gl=TW&ceid=TW:zh-Hant" }
         ],
         debates: [
           {
@@ -561,7 +588,6 @@
         data.companies = [];
       }
 
-      // 若舊版 data.json 還沒跑出中華航空，前端自動掛載華航結構讓切換按鈕立即生效！
       const hasCal = data.companies.some(c => (c.company_id || c.id) === 'cal');
       if (!hasCal) {
         data.companies.push({
@@ -677,7 +703,7 @@
         btn.innerHTML = `<span>✈️</span><span>${company.company_name}</span>`;
         btn.onclick = () => {
           currentCompanyId = company.company_id;
-          if ( currentCategoryId !== 'finance_special' && company.categories && company.categories.length > 0) {
+          if (currentCategoryId !== 'finance_special' && company.categories && company.categories.length > 0) {
             const hasSameCat = company.categories.some(c => c.category_id === currentCategoryId);
             if (!hasSameCat) currentCategoryId = company.categories[0].category_id;
           }
@@ -816,378 +842,29 @@
       });
     }
 
-    function renderFinanceDashboard(company) {
-      const defProfile = defaultProfilesByCompany[currentCompanyId] || defaultProfilesByCompany.starlux;
-      const defFin = defaultFinanceByCompany[currentCompanyId] || defaultFinanceByCompany.starlux;
-      document.getElementById('finance-company-title').textContent = defProfile.financeHeaderTitle;
+    // 智慧判斷財務事件屬於「月營收 (monthly)」、「季財報 (quarterly)」或「重大訊息與資本操作 (major)」
+    function classifyFinanceBucket(item) {
+      const typeStr = (item.type || '').toLowerCase();
+      const textStr = ((item.title || '') + ' ' + (item.desc || '')).toLowerCase();
 
-      const finData = (company && company.finance_overview) ? company.finance_overview : {};
-
-      const metricsGrid = document.getElementById('finance-metrics-grid');
-      metricsGrid.innerHTML = '';
-      const colorMap = {
-        rose: 'text-rose-400',
-        amber: 'text-amber-400',
-        emerald: 'text-emerald-400',
-        sky: 'text-sky-400'
-      };
-
-      const activeMetrics = (Array.isArray(finData.metrics) && finData.metrics.length > 0) ? finData.metrics : defFin.metrics;
-      activeMetrics.forEach(m => {
-        const c = colorMap[m.color] || 'text-amber-400';
-        const card = document.createElement('div');
-        card.className = 'bg-slate-900 p-4 rounded-xl border border-slate-800';
-        card.innerHTML = `
-          <span class="text-xs text-slate-400">${m.label}</span>
-          <div class="text-lg font-bold ${c} mt-1">${m.value}</div>
-          <p class="text-xs text-slate-400 mt-1 leading-relaxed">${m.subtext}</p>
-        `;
-        metricsGrid.appendChild(card);
-      });
-
-      const timelineBox = document.getElementById('finance-history-timeline');
-      timelineBox.innerHTML = '';
-
-      const cat3 = (company && company.categories) ? company.categories.find(c => c.category_id === 'cat3') : null;
-      const dynamicFinArticles = cat3 ? getCleanedArticles(cat3).cleaned : [];
-
-      const rawFinLogs = (Array.isArray(finData.history_logs) && finData.history_logs.length > 0)
-        ? finData.history_logs
-        : defFin.history_logs;
-
-      const combinedLogs = rawFinLogs.map(item => ({
-        date: item.date || item.period || '近期',
-        type: item.type || item.event_type || '財務動態',
-        title: item.title || item.headline || '',
-        desc: item.desc || item.metrics || '',
-        link: item.link || item.url || ''
-      }));
-
-      dynamicFinArticles.slice(0, 4).forEach(art => {
-        const artTitle = art.translated_title || art.title;
-        if (!combinedLogs.some(x => x.title === artTitle)) {
-          combinedLogs.unshift({
-            date: art.published_at || art.date || '最新',
-            type: '新聞動態',
-            title: artTitle,
-            desc: art.summary,
-            link: art.link || art.url
-          });
-        }
-      });
-
-      combinedLogs.slice(0, 6).forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'bg-slate-900/80 p-3.5 rounded-lg border border-slate-800 flex flex-col justify-between gap-2';
-        div.innerHTML = `
-          <div>
-            <div class="flex items-center justify-between gap-2 mb-1">
-              <span class="text-xs font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">${item.date} · ${item.type}</span>
-              ${item.link ? `<a href="${item.link}" target="_blank" rel="noopener noreferrer" class="text-[11px] text-amber-400 hover:underline">原始報導 ↗</a>` : ''}
-            </div>
-            <div class="text-sm font-bold text-white mt-1">${item.title}</div>
-            <p class="text-xs text-slate-300 mt-1 leading-relaxed">${item.desc}</p>
-          </div>
-        `;
-        timelineBox.appendChild(div);
-      });
-
-      const debatesList = document.getElementById('finance-debates-list');
-      debatesList.innerHTML = '';
-      const activeDebates = (Array.isArray(finData.debates) && finData.debates.length > 0) ? finData.debates : defFin.debates;
-      activeDebates.forEach(d => {
-        const box = document.createElement('div');
-        box.className = 'bg-slate-900/90 rounded-xl p-5 border border-slate-800';
-        box.innerHTML = `
-          <div class="flex flex-wrap items-center justify-between gap-2 mb-3 pb-3 border-b border-slate-800">
-            <h4 class="text-base font-bold text-white">${d.title}</h4>
-            <span class="text-xs px-2.5 py-1 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">${d.tag}</span>
-          </div>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs sm:text-sm">
-            <div class="bg-emerald-950/30 border border-emerald-500/30 rounded-lg p-3.5">
-              <div class="font-bold text-emerald-400 mb-1.5">🟢 正方觀點 (公司優勢與標準財務操作)</div>
-              <p class="text-slate-300 leading-relaxed">${d.bull}</p>
-            </div>
-            <div class="bg-rose-950/30 border border-rose-500/30 rounded-lg p-3.5">
-              <div class="font-bold text-rose-400 mb-1.5">🔴 反方隱憂 (市場風險與產業挑戰)</div>
-              <p class="text-slate-300 leading-relaxed">${d.bear}</p>
-            </div>
-            <div class="bg-sky-950/30 border border-sky-500/30 rounded-lg p-3.5">
-              <div class="font-bold text-sky-400 mb-1.5">✈️ 培訓機師面試官視角 (你的回答策略)</div>
-              <p class="text-slate-300 leading-relaxed">${d.pilot}</p>
-            </div>
-          </div>
-        `;
-        debatesList.appendChild(box);
-      });
-    }
-
-    function renderCategoryTabs() {
-      const container = document.getElementById('category-tabs');
-      container.innerHTML = '';
-      const company = getCurrentCompany();
-      if (!company || !company.categories) return;
-
-      company.categories.forEach(cat => {
-        const isActive = cat.category_id === currentCategoryId;
-        const { cleaned } = getCleanedArticles(cat);
-        const articleCount = cleaned.length;
-
-        const btn = document.createElement('button');
-        btn.className = isActive
-          ? 'border-b-2 border-amber-400 text-amber-300 px-4 py-2.5 text-sm font-bold whitespace-nowrap flex items-center gap-2 bg-slate-800/40 rounded-t-lg'
-          : 'border-b-2 border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-700 px-4 py-2.5 text-sm font-medium whitespace-nowrap flex items-center gap-2 transition';
-        btn.innerHTML = '<span>' + cat.category_name + '</span>' +
-          '<span class="text-xs px-1.5 py-0.5 rounded-full ' + (isActive ? 'bg-amber-500/20 text-amber-300' : 'bg-slate-800 text-slate-400') + '">' + articleCount + '</span>';
-        btn.onclick = () => {
-          currentCategoryId = cat.category_id;
-          resetFilters();
-          renderCategoryTabs();
-          populateMonthFilter();
-          renderMainContent();
-        };
-        container.appendChild(btn);
-      });
-
-      const isFinanceActive = currentCategoryId === 'finance_special';
-      const finBtn = document.createElement('button');
-      finBtn.className = isFinanceActive
-        ? 'border-b-2 border-emerald-400 text-emerald-300 px-4 py-2.5 text-sm font-bold whitespace-nowrap flex items-center gap-2 bg-emerald-950/30 rounded-t-lg'
-        : 'border-b-2 border-transparent text-emerald-400/80 hover:text-emerald-300 hover:border-emerald-700 px-4 py-2.5 text-sm font-bold whitespace-nowrap flex items-center gap-2 transition';
-      finBtn.innerHTML = '<span>📊 5.財務統計與正反觀點判讀</span><span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300">動態回溯</span>';
-      finBtn.onclick = () => {
-        currentCategoryId = 'finance_special';
-        renderCategoryTabs();
-        renderMainContent();
-      };
-      container.appendChild(finBtn);
-    }
-
-    function getCurrentCompany() {
-      return (appData.companies || []).find(c => c.company_id === currentCompanyId);
-    }
-    function getCurrentCategory() {
-      const company = getCurrentCompany();
-      if (!company) return null;
-      return (company.categories || []).find(cat => cat.category_id === currentCategoryId);
-    }
-
-    function resetFilters() {
-      currentSearchQuery = '';
-      currentMonthFilter = 'all';
-      displayLimit = PAGE_SIZE;
-      document.getElementById('search-input').value = '';
-      document.getElementById('month-filter').value = 'all';
-    }
-
-    function populateMonthFilter() {
-      const select = document.getElementById('month-filter');
-      select.innerHTML = '<option value="all">所有月份</option>';
-      const category = getCurrentCategory();
-      if (!category) return;
-      const { cleaned } = getCleanedArticles(category);
-      const months = new Set();
-      cleaned.forEach(art => {
-        const d = art.published_at || art.date || '';
-        if (d.length >= 7) {
-          months.add(d.substring(0, 7));
-        }
-      });
-      Array.from(months).sort().reverse().forEach(m => {
-        const opt = document.createElement('option');
-        opt.value = m;
-        opt.textContent = m;
-        select.appendChild(opt);
-      });
-    }
-
-    function getLangBadge(art) {
-      const isIG = art.is_manual || (art.title && art.title.includes('官方IG'));
-      let badge = '';
-      if (isIG) {
-        badge = '<span class="px-2 py-0.5 text-[11px] font-semibold rounded bg-pink-500/20 text-pink-300 border border-pink-500/30">📸 官方 IG 精選</span>';
-      } else if (art.lang === 'en') {
-        badge = '<span class="px-2 py-0.5 text-[11px] font-semibold rounded bg-sky-500/20 text-sky-300 border border-sky-500/30">EN 外電翻譯</span>';
-      } else {
-        badge = '<span class="px-2 py-0.5 text-[11px] font-semibold rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">ZH 華文媒體</span>';
+      if (typeStr.includes('季') || typeStr.includes('財報') || typeStr.includes('半年報') || typeStr.includes('年報')) {
+        return 'quarterly';
       }
-      if (art.merged_count && art.merged_count > 1) {
-        badge += ` <span class="px-2 py-0.5 text-[11px] rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">🔗 已合併 ${art.merged_count} 篇同事件報導</span>`;
+      if (typeStr.includes('月營收')) {
+        return 'monthly';
       }
-      return badge;
-    }
-
-    function getProsConsHtml(art) {
-      if (!art.bull_view && !art.bear_view && !art.pilot_view) return '';
-      return `
-        <div class="mt-3 pt-3 border-t border-slate-800/80 grid grid-cols-1 gap-2 text-xs">
-          ${art.bull_view ? `<div class="bg-emerald-950/30 border border-emerald-500/20 p-2.5 rounded"><span class="font-bold text-emerald-400">🟢 正面/公司派解讀：</span><span class="text-slate-300">${art.bull_view}</span></div>` : ''}
-          ${art.bear_view ? `<div class="bg-rose-950/30 border border-rose-500/20 p-2.5 rounded"><span class="font-bold text-rose-400">🔴 風險/市場派隱憂：</span><span class="text-slate-300">${art.bear_view}</span></div>` : ''}
-          ${art.pilot_view ? `<div class="bg-sky-950/30 border border-sky-500/20 p-2.5 rounded"><span class="font-bold text-sky-400">✈️ 培訓機師面試視角：</span><span class="text-slate-300">${art.pilot_view}</span></div>` : ''}
-        </div>
-      `;
-    }
-
-    function renderMainContent() {
-      const financeDash = document.getElementById('finance-dashboard');
-      const contentArea = document.getElementById('content-area');
-      const company = getCurrentCompany();
-
-      if (currentCategoryId === 'finance_special') {
-        contentArea.classList.add('hidden');
-        financeDash.classList.remove('hidden');
-        renderFinanceDashboard(company);
-        return;
+      if (typeStr.includes('重大') || typeStr.includes('資本') || typeStr.includes('資產')) {
+        return 'major';
       }
 
-      financeDash.classList.add('hidden');
-      contentArea.classList.remove('hidden');
-
-      renderCompanyProfileSection(company);
-
-      const category = getCurrentCategory();
-      if (!category) return;
-
-      const metaGroup = defaultCategoryMetaByCompany[currentCompanyId] || defaultCategoryMetaByCompany.starlux;
-      document.getElementById('overall-summary').textContent = category.overall_summary || metaGroup[currentCategoryId]?.summary || '目前尚無綜合分析資料。';
-
-      const { cleaned, removedNoise, mergedDuplicates } = getCleanedArticles(category);
-      document.getElementById('filter-stats').textContent = `已合併 ${mergedDuplicates} 篇重複報導 · 攔截 ${removedNoise} 篇非航空雜訊`;
-
-      const sortedNewestFirst = [...cleaned].sort((a, b) => (b.published_at || '').localeCompare(a.published_at || ''));
-      const top3Articles = sortedNewestFirst.slice(0, 3);
-      const top3Ids = new Set(top3Articles.map(a => a.id));
-
-      const topGrid = document.getElementById('top-articles-grid');
-      topGrid.innerHTML = '';
-
-      if (top3Articles.length === 0) {
-        topGrid.innerHTML = '<div class="col-span-3 text-center py-8 bg-slate-900/50 rounded-xl border border-slate-800 text-slate-400 text-sm">此航司分類目前正在等待 GitHub Actions 自動抓取與回溯新聞中（可至 GitHub Actions 點擊 Run workflow 立即更新）。</div>';
-      } else {
-        top3Articles.forEach((art, idx) => {
-          const displayTitle = art.translated_title || art.title;
-          const showOriginalTitle = art.lang === 'en' && art.title && art.title !== art.translated_title;
-          const card = document.createElement('div');
-          card.className = 'bg-slate-900/90 rounded-xl p-5 border border-slate-700/80 flex flex-col justify-between card-hover relative overflow-hidden';
-          card.innerHTML = `
-            <div>
-              <div class="flex items-center justify-between gap-2 mb-3 flex-wrap">
-                <div class="flex items-center gap-1.5 flex-wrap">
-                  <span class="px-2 py-0.5 text-[11px] font-bold rounded gold-gradient text-slate-950">TOP ${idx + 1}</span>
-                  ${getLangBadge(art)}
-                </div>
-                <span class="text-xs font-mono text-slate-400">${art.published_at || '未知日期'}</span>
-              </div>
-              <h4 class="text-base font-bold text-white mb-2 leading-snug hover:text-amber-300 transition">
-                <a href="${art.link}" target="_blank" rel="noopener noreferrer">${displayTitle}</a>
-              </h4>
-              ${showOriginalTitle ? `<p class="text-xs text-slate-400 italic mb-2.5 line-clamp-1">${art.title}</p>` : ''}
-              <p class="text-sm text-slate-300 leading-relaxed mb-3">${art.summary || '無摘要內容'}</p>
-              ${getProsConsHtml(art)}
-            </div>
-            <div class="pt-3 mt-2 border-t border-slate-800/80 flex items-center justify-between text-xs">
-              <span class="text-slate-500 font-mono">${art.source || ('ID: ' + (art.id || '-'))}</span>
-              <a href="${art.link}" target="_blank" rel="noopener noreferrer" class="text-amber-400 hover:text-amber-300 font-medium flex items-center gap-1">閱讀原始報導 <span>↗</span></a>
-            </div>
-          `;
-          topGrid.appendChild(card);
-        });
+      if (/(q1|q2|q3|q4|第一季|第二季|第三季|第四季|季報|半年報|年報|財報|稅後|淨利|淨損|eps|毛利率|營業利益)/.test(textStr)) {
+        return 'quarterly';
       }
-
-      renderHistoryList(cleaned, top3Ids);
-    }
-
-    function renderHistoryList(cleanedArticles, top3Ids) {
-      const listContainer = document.getElementById('history-articles-list');
-      const loadMoreContainer = document.getElementById('load-more-container');
-      const totalBadge = document.getElementById('total-count-badge');
-
-      let filtered = cleanedArticles.filter(art => {
-        if (hideTop3InList && !currentSearchQuery && top3Ids && top3Ids.has(art.id)) {
-          return false;
-        }
-        const matchMonth = currentMonthFilter === 'all' || (art.published_at && art.published_at.startsWith(currentMonthFilter));
-        const textPool = ((art.translated_title || '') + ' ' + (art.title || '') + ' ' + (art.summary || '')).toLowerCase();
-        const matchQuery = !currentSearchQuery || textPool.includes(currentSearchQuery.toLowerCase());
-        return matchMonth && matchQuery;
-      });
-
-      filtered.sort((a, b) => {
-        const dateA = a.published_at || '';
-        const dateB = b.published_at || '';
-        return currentSortOrder === 'desc' ? dateB.localeCompare(dateA) : dateA.localeCompare(dateB);
-      });
-
-      totalBadge.textContent = filtered.length + ' 篇 (不含Top3重複)';
-      listContainer.innerHTML = '';
-
-      if (filtered.length === 0) {
-        listContainer.innerHTML = '<div class="text-center py-8 bg-slate-900/40 rounded-lg border border-slate-800 text-slate-400 text-sm">目前此分類除了上方 Top 3 外，尚無其他歷史情報（或可取消勾選「隱藏上方 Top 3」檢視）。</div>';
-        loadMoreContainer.classList.add('hidden');
-        return;
+      if (/(月營收|單月營收|累計營收|\d+月營收|營收創)/.test(textStr)) {
+        return 'monthly';
       }
-
-      const visibleArticles = filtered.slice(0, displayLimit);
-      visibleArticles.forEach(art => {
-        const displayTitle = art.translated_title || art.title;
-        const showOriginalTitle = art.lang === 'en' && art.title && art.title !== art.translated_title;
-        const item = document.createElement('div');
-        item.className = 'bg-slate-900/60 hover:bg-slate-800/70 rounded-lg p-4 border border-slate-800 transition flex flex-col sm:flex-row sm:items-center justify-between gap-4';
-        item.innerHTML = `
-          <div class="space-y-1.5 flex-grow">
-            <div class="flex flex-wrap items-center gap-2">
-              <span class="text-xs font-mono text-amber-400/90 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">${art.published_at || '未知日期'}</span>
-              ${getLangBadge(art)}
-              <a href="${art.link}" target="_blank" rel="noopener noreferrer" class="text-sm sm:text-base font-bold text-slate-100 hover:text-amber-300 transition">${displayTitle}</a>
-            </div>
-            ${showOriginalTitle ? `<p class="text-xs text-slate-400 italic">${art.title}</p>` : ''}
-            <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">${art.summary || ''}</p>
-            ${getProsConsHtml(art)}
-          </div>
-          <div class="shrink-0 flex sm:flex-col items-end justify-between gap-2 border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-800">
-            <a href="${art.link}" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded bg-slate-800 hover:bg-amber-500 hover:text-slate-950 text-slate-300 text-xs font-medium border border-slate-700 transition whitespace-nowrap">原始連結 ↗</a>
-          </div>
-        `;
-        listContainer.appendChild(item);
-      });
-
-      const remaining = filtered.length - visibleArticles.length;
-      if (remaining > 0) {
-        loadMoreContainer.classList.remove('hidden');
-        document.getElementById('remaining-count').textContent = '剩餘 ' + remaining + ' 篇';
-      } else {
-        loadMoreContainer.classList.add('hidden');
+      if (/(增資|發債|轉換公司債|售後租回|購機|租機|處分|重訊|重大訊息|聯貸|法說|股利|配息|資本支出)/.test(textStr)) {
+        return 'major';
       }
-    }
-
-    document.getElementById('hide-top3-toggle').addEventListener('change', (e) => {
-      hideTop3InList = e.target.checked;
-      renderMainContent();
-    });
-
-    document.getElementById('search-input').addEventListener('input', (e) => {
-      currentSearchQuery = e.target.value.trim();
-      displayLimit = PAGE_SIZE;
-      renderMainContent();
-    });
-
-    document.getElementById('month-filter').addEventListener('change', (e) => {
-      currentMonthFilter = e.target.value;
-      displayLimit = PAGE_SIZE;
-      renderMainContent();
-    });
-
-    document.getElementById('sort-order').addEventListener('change', (e) => {
-      currentSortOrder = e.target.value;
-      renderMainContent();
-    });
-
-    document.getElementById('load-more-btn').addEventListener('click', () => {
-      displayLimit += PAGE_SIZE;
-      renderMainContent();
-    });
-
-    window.addEventListener('DOMContentLoaded', initApp);
-  </script>
-</body>
-</html>
+      if (textStr.includes('營收')) {
+        return 'monthly';
