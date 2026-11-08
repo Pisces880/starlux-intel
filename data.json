@@ -1,6 +1,6 @@
 {
-  "last_updated": "2026-11-07 00:49",
-  "backfill_cursor": "2026-02-02",
+  "last_updated": "2026-11-08 00:48",
+  "backfill_cursor": "2026-01-03",
   "backfill_target_stop": "2025-09-01",
   "companies": [
     {
@@ -333,7 +333,7 @@
           ]
         }
       ],
-      "last_updated": "2026-11-07 00:48",
+      "last_updated": "2026-11-08 00:48",
       "company_profile": {
         "philosophy": {
           "title": "核心理念與企業文化",
@@ -373,7 +373,7 @@
       "finance_overview": {
         "history_logs": []
       },
-      "backfill_cursor": "2026-02-02"
+      "backfill_cursor": "2026-01-03"
     },
     {
       "company_id": "cal",
@@ -443,8 +443,8 @@
       "finance_overview": {
         "history_logs": []
       },
-      "backfill_cursor": "2026-10-08",
-      "last_updated": "2026-11-07 00:49"
+      "backfill_cursor": "2026-10-09",
+      "last_updated": "2026-11-08 00:48"
     }
   ]
 }
